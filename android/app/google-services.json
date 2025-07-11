@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "439563567935",
+    "project_id": "cnssapp-d0758",
+    "storage_bucket": "cnssapp-d0758.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:439563567935:android:ac3a7b32b672ebf977098a",
+        "android_client_info": {
+          "package_name": "com.example.cnss_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBzitKan4CfLHgaw7wU1mRTg6bVMD5-5Sk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

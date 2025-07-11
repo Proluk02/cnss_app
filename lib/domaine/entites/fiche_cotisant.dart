@@ -1,0 +1,1 @@
+// Entité fiche cotisant
