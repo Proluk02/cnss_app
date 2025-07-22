@@ -1,75 +1,171 @@
-// Écran d'accueil
 import 'package:flutter/material.dart';
-import '../../vues/authentification/connexion.dart';
+import '../../../core/constantes.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final bool isLargeScreen = size.width > 600;
+
     return Scaffold(
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF4A90E2), Color(0xFF50E3C2)],
+            colors: [kPrimaryColor, kSecondaryColor],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 60),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Spacer(),
-            const Text(
-              'Bienvenue sur CNSSApp',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                shadows: [
-                  Shadow(
-                    blurRadius: 5,
-                    color: Colors.black45,
-                    offset: Offset(2, 2),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(
+              horizontal: isLargeScreen ? size.width * 0.20 : 32,
+              vertical: 48,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Logo avec fond circulaire et ombre soft
+                Container(
+                  width: isLargeScreen ? 180 : 140,
+                  height: isLargeScreen ? 180 : 140,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.18),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white24, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26.withOpacity(0.3),
+                        blurRadius: 18,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Votre gestion simplifiée des cotisations sociales.',
-              style: TextStyle(fontSize: 18, color: Colors.white70),
-              textAlign: TextAlign.center,
-            ),
-            const Spacer(flex: 2),
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ConnexionPage()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: const Color(0xFF4A90E2),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                  padding: EdgeInsets.all(isLargeScreen ? 40 : 20),
+                  child: Image.asset(
+                    'assets/images/logo_cnss.png',
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
                   ),
-                  elevation: 8,
                 ),
-                child: const Text(
-                  'Get Started',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+
+                const SizedBox(height: 48),
+
+                // Titre
+                Text(
+                  'Bienvenue sur CNSSApp',
+                  style: kTitleStyle.copyWith(
+                    color: Colors.white,
+                    fontSize: isLargeScreen ? 36 : 28,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.5,
+                    shadows: const [
+                      Shadow(
+                        color: Colors.black38,
+                        offset: Offset(0, 2),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
+
+                const SizedBox(height: 12),
+
+                // Description courte
+                Text(
+                  'Votre portail social numérique pour gérer vos cotisations rapidement et en toute simplicité.',
+                  style: kSubtitleStyle.copyWith(
+                    color: Colors.white70,
+                    fontSize: isLargeScreen ? 18 : 16,
+                    fontWeight: FontWeight.w400,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 60),
+
+                // Boutons principaux
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: 400),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed:
+                            () => Navigator.pushNamed(context, '/connexion'),
+                        icon: const Icon(Icons.login, size: 20),
+                        label: const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 14),
+                          child: Text(
+                            'Se connecter',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: kPrimaryColor,
+                          elevation: 5,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(kButtonRadius),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      OutlinedButton.icon(
+                        onPressed:
+                            () => Navigator.pushNamed(context, '/inscription'),
+                        icon: const Icon(
+                          Icons.person_add_alt,
+                          size: 20,
+                          color: Colors.white,
+                        ),
+                        label: const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 14),
+                          child: Text(
+                            'Créer un compte',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(color: Colors.white, width: 2),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(kButtonRadius),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 60),
+
+                // Footer copyright
+                Text(
+                  '© ${DateTime.now().year} CNSS - Direction Provinciale de Kamina',
+                  style: const TextStyle(
+                    color: Colors.white54,
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                    letterSpacing: 0.3,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
-            const SizedBox(height: 40),
-          ],
+          ),
         ),
       ),
     );
