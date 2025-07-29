@@ -15,6 +15,8 @@ dependencies:
   flutter_riverpod: ^2.5.1
   sqflite: ^2.4.2
   intl: ^0.20.2
+  flutter_vector_icons: ^2.0.0
+  animated_notch_bottom_bar: ^1.0.3
 
 dev_dependencies:
   flutter_test:
