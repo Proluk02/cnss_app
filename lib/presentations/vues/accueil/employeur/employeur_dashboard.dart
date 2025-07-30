@@ -1,10 +1,17 @@
+// lib/presentations/vues/dashboard/employeur_dashboard.dart
+
 import 'package:cnss_app/core/constantes.dart';
+import 'package:cnss_app/presentations/viewmodels/auth_viewmodel.dart';
+import 'package:cnss_app/presentations/viewmodels/declaration_viewmodel.dart';
+import 'package:cnss_app/presentations/viewmodels/travailleur_viewmodel.dart';
+import 'package:cnss_app/presentations/vues/accueil/employeur/worker_add_form.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Import pour User
+
 import 'dashboard_home.dart';
 import 'workers_list.dart';
-import 'worker_add_form.dart';
 import 'declaration_entry_screen.dart';
-import 'package:cnss_app/donnees/modeles/travailleur.dart';
 
 class EmployeurDashboard extends StatefulWidget {
   const EmployeurDashboard({super.key});
@@ -15,7 +22,14 @@ class EmployeurDashboard extends StatefulWidget {
 
 class _EmployeurDashboardState extends State<EmployeurDashboard> {
   int _selectedIndex = 0;
-  Travailleur? _selectedTravailleur;
+
+  final List<Widget> _tabs = [
+    const DashboardHome(),
+    const WorkersList(),
+    const DeclarationEntryScreen(),
+    const Center(child: Text('Historique des Déclarations')),
+    const Center(child: Text('Aide et Support')),
+  ];
 
   final List<Map<String, dynamic>> _bottomNavItems = [
     {'icon': Icons.home_outlined, 'label': 'Accueil'},
@@ -25,71 +39,51 @@ class _EmployeurDashboardState extends State<EmployeurDashboard> {
     {'icon': Icons.help_outline, 'label': 'Aide'},
   ];
 
-  void _onWorkerSelected(Travailleur t) {
-    setState(() {
-      _selectedTravailleur = t;
-      _selectedIndex = 2;
-    });
-  }
-
-  void _onDeclarationSaved(Map<String, dynamic> data) {
-    setState(() {
-      _selectedIndex = 1;
-      _selectedTravailleur = null;
-    });
-  }
-
   void _showAddWorkerDialog() {
+    final travailleurVM = context.read<TravailleurViewModel>();
+
     showDialog(
       context: context,
-      builder:
-          (context) => Dialog(
+      builder: (dialogContext) {
+        return ChangeNotifierProvider.value(
+          value: travailleurVM,
+          child: Dialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: WorkerAddForm(
-                onWorkerAdded: (travailleur) {
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Travailleur ${travailleur.nomComplet} ajouté !',
-                      ),
-                      backgroundColor: kSuccessColor,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  );
-                  setState(() {
-                    _selectedIndex = 1;
-                  });
-                },
-              ),
-            ),
+            child: const WorkerAddForm(),
           ),
+        );
+      },
+    );
+  }
+
+  void _logout() async {
+    await context.read<AuthViewModel>().logout();
+  }
+
+  void _forceSync() {
+    // CORRECTION : Appelle les bonnes méthodes de chargement des ViewModels
+    context.read<TravailleurViewModel>().chargerTravailleurs();
+    context.read<DeclarationViewModel>().chargerBrouillon(notify: true);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Synchronisation avec Firebase en cours...'),
+        backgroundColor: Colors.blueAccent,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final tabs = [
-      const DashboardHome(),
-      WorkersList(onWorkerSelected: _onWorkerSelected),
-      DeclarationEntryScreen(
-        travailleur: _selectedTravailleur,
-        onDeclarationSaved: _onDeclarationSaved,
-      ),
-      const Center(child: Text('Historique des Déclarations')),
-      const Center(child: Text('Aide et Support')),
-    ];
+    // On observe le AuthViewModel pour les informations de l'utilisateur
+    context.watch<AuthViewModel>();
+    final User? currentUser =
+        FirebaseAuth.instance.currentUser; // Pour l'affichage
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'E-Déclaration CNSS',
           style: TextStyle(
             color: Colors.white,
@@ -99,21 +93,19 @@ class _EmployeurDashboardState extends State<EmployeurDashboard> {
         ),
         centerTitle: true,
         flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [kPrimaryColor, kSecondaryColor],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
+          decoration: const BoxDecoration(gradient: kAppBarGradient),
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.notifications_outlined, color: Colors.white),
-            onPressed: () {},
+            icon: const Icon(Icons.sync, color: Colors.white),
+            tooltip: 'Synchroniser avec le serveur',
+            onPressed: _forceSync,
           ),
           IconButton(
-            icon: Icon(Icons.account_circle_outlined, color: Colors.white),
+            icon: const Icon(
+              Icons.account_circle_outlined,
+              color: Colors.white,
+            ),
             onPressed: () {},
           ),
         ],
@@ -123,15 +115,12 @@ class _EmployeurDashboardState extends State<EmployeurDashboard> {
         child: Column(
           children: [
             UserAccountsDrawerHeader(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [kPrimaryColor, kSecondaryColor],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+              decoration: const BoxDecoration(gradient: kAppBarGradient),
+              // CORRECTION : Affiche dynamiquement les infos de l'utilisateur
+              accountName: Text(
+                currentUser?.displayName ?? "Nom de l'employeur",
               ),
-              accountName: Text("Nom de l'employeur"),
-              accountEmail: Text("employeur@example.com"),
+              accountEmail: Text(currentUser?.email ?? "email@employeur.com"),
               currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white,
                 child: Icon(Icons.person_outline, color: kPrimaryColor),
@@ -154,19 +143,19 @@ class _EmployeurDashboardState extends State<EmployeurDashboard> {
                   ),
                   _drawerItem(3, 'Historique', Icons.history_outlined),
                   _drawerItem(4, 'Aide & Support', Icons.help_outline_outlined),
-                  Divider(height: 1),
+                  const Divider(height: 1),
                   ListTile(
-                    leading: Icon(Icons.settings_outlined),
-                    title: Text('Paramètres'),
+                    leading: const Icon(Icons.settings_outlined),
+                    title: const Text('Paramètres'),
                     onTap: () {},
                   ),
                   ListTile(
-                    leading: Icon(Icons.logout, color: Colors.red),
-                    title: Text(
+                    leading: const Icon(Icons.logout, color: Colors.red),
+                    title: const Text(
                       'Déconnexion',
                       style: TextStyle(color: Colors.red),
                     ),
-                    onTap: () {},
+                    onTap: _logout,
                   ),
                 ],
               ),
@@ -174,59 +163,50 @@ class _EmployeurDashboardState extends State<EmployeurDashboard> {
           ],
         ),
       ),
-      body: Container(color: Colors.grey[50], child: tabs[_selectedIndex]),
+      body: Container(color: Colors.grey[50], child: _tabs[_selectedIndex]),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-            if (index != 2) _selectedTravailleur = null;
-          });
-        },
+        onTap: (index) => setState(() => _selectedIndex = index),
         type: BottomNavigationBarType.fixed,
         selectedItemColor: kPrimaryColor,
         unselectedItemColor: Colors.grey,
-        selectedLabelStyle: TextStyle(fontSize: 12),
+        selectedLabelStyle: const TextStyle(fontSize: 12),
         items:
-            _bottomNavItems.map((item) {
-              return BottomNavigationBarItem(
-                icon: Icon(item['icon']),
-                label: item['label'],
-              );
-            }).toList(),
+            _bottomNavItems
+                .map(
+                  (item) => BottomNavigationBarItem(
+                    icon: Icon(item['icon']),
+                    label: item['label'],
+                  ),
+                )
+                .toList(),
       ),
       floatingActionButton:
           _selectedIndex == 1
               ? FloatingActionButton(
                 onPressed: _showAddWorkerDialog,
-                child: Icon(Icons.person_add_alt_1, size: 28),
                 backgroundColor: kPrimaryColor,
                 elevation: 4,
+                child: const Icon(Icons.person_add_alt_1, size: 28),
               )
               : null,
     );
   }
 
   Widget _drawerItem(int index, String title, IconData icon) {
+    final bool isSelected = _selectedIndex == index;
     return ListTile(
-      leading: Icon(
-        icon,
-        color: _selectedIndex == index ? kPrimaryColor : Colors.grey[700],
-      ),
+      leading: Icon(icon, color: isSelected ? kPrimaryColor : Colors.grey[700]),
       title: Text(
         title,
         style: TextStyle(
-          color: _selectedIndex == index ? kPrimaryColor : Colors.grey[800],
-          fontWeight:
-              _selectedIndex == index ? FontWeight.bold : FontWeight.normal,
+          color: isSelected ? kPrimaryColor : Colors.grey[800],
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
       ),
-      selected: _selectedIndex == index,
+      selected: isSelected,
       onTap: () {
-        setState(() {
-          _selectedIndex = index;
-          if (index != 2) _selectedTravailleur = null;
-        });
+        setState(() => _selectedIndex = index);
         Navigator.pop(context);
       },
     );

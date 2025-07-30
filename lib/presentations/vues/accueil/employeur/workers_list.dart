@@ -1,54 +1,69 @@
+// presentations/vues/dashboard/workers_list.dart
+
 import 'package:cnss_app/core/constantes.dart';
+import 'package:cnss_app/presentations/viewmodels/travailleur_viewmodel.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cnss_app/donnees/modeles/travailleur.dart';
+import 'package:provider/provider.dart';
 
 class WorkersList extends StatelessWidget {
-  final Function(Travailleur) onWorkerSelected;
-
-  const WorkersList({super.key, required this.onWorkerSelected});
+  const WorkersList({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final FirebaseFirestore _db = FirebaseFirestore.instance;
-
-    return StreamBuilder<QuerySnapshot>(
-      stream: _db.collection('travailleurs').snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return const Center(child: Text('Erreur lors du chargement'));
-        }
-        if (!snapshot.hasData) {
+    // Utiliser Consumer pour reconstruire l'UI quand les données changent
+    return Consumer<TravailleurViewModel>(
+      builder: (context, viewModel, child) {
+        // Afficher un indicateur de chargement
+        if (viewModel.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final docs = snapshot.data!.docs;
-        if (docs.isEmpty) {
-          return const Center(child: Text('Aucun travailleur enregistré.'));
+        // Afficher un message si la liste est vide
+        if (viewModel.travailleurs.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(kDefaultPadding),
+              child: Text(
+                "Aucun travailleur enregistré. Cliquez sur le bouton '+' pour en ajouter un.",
+                textAlign: TextAlign.center,
+              ),
+            ),
+          );
         }
 
-        final travailleurs =
-            docs.map((doc) => Travailleur.fromDoc(doc)).toList();
-
+        // Afficher la liste des travailleurs
         return ListView.builder(
           padding: const EdgeInsets.all(kDefaultPadding),
-          itemCount: travailleurs.length,
+          itemCount: viewModel.travailleurs.length,
           itemBuilder: (context, index) {
-            final t = travailleurs[index];
+            final t = viewModel.travailleurs[index];
+            final bool isSynced = t.syncStatus == 'synced';
             return Card(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(kCardRadius),
               ),
               margin: const EdgeInsets.only(bottom: 12),
               child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: isSynced ? Colors.green : Colors.orange,
+                  child: Icon(
+                    isSynced
+                        ? Icons.cloud_done_outlined
+                        : Icons.cloud_upload_outlined,
+                    color: Colors.white,
+                  ),
+                ),
                 title: Text(t.nomComplet),
                 subtitle: Text(
                   'Matricule: ${t.matricule} | CNSS: ${t.immatriculationCNSS}',
                 ),
                 trailing: Text(
                   t.typeTravailleur == 1 ? 'Travailleur' : 'Assimilé',
+                  style: const TextStyle(fontSize: 12),
                 ),
-                onTap: () => onWorkerSelected(t),
+                onTap: () {
+                  // TODO: Naviguer vers un écran de détails/modification du travailleur
+                },
               ),
             );
           },

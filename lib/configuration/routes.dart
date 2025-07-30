@@ -14,7 +14,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case '/admin':
       return MaterialPageRoute(builder: (_) => const GestionUtilisateurs());
     case '/dashboard':
-      return MaterialPageRoute(builder: (_) => const TableauBord());
+      return MaterialPageRoute(builder: (_) => const TableauBord(role: ''));
     default:
       return MaterialPageRoute(
         builder:

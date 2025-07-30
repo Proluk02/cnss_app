@@ -1,65 +1,52 @@
-// Tableau de bord
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+// lib/presentations/vues/tableau_bord.dart
 
-import 'accueil/employeur/employeur_dashboard.dart';
-import 'accueil/chef_ses_dashboard.dart';
-import 'accueil/prepose_dashboard.dart';
-import 'accueil/decompteur_dashboard.dart';
-import 'accueil/directeur_dashboard.dart';
-import 'admin/gestion_utilisateurs.dart';
+import 'package:cnss_app/presentations/vues/accueil/chef_ses_dashboard.dart';
+import 'package:cnss_app/presentations/vues/accueil/decompteur_dashboard.dart';
+import 'package:cnss_app/presentations/vues/accueil/directeur_dashboard.dart';
+import 'package:cnss_app/presentations/vues/accueil/employeur/employeur_dashboard.dart';
+import 'package:cnss_app/presentations/vues/accueil/prepose_dashboard.dart';
+import 'package:flutter/material.dart';
 
 class TableauBord extends StatelessWidget {
-  const TableauBord({super.key});
-
-  Future<String?> _getUserRole() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return null;
-
-    final doc =
-        await FirebaseFirestore.instance
-            .collection('utilisateurs')
-            .doc(uid)
-            .get();
-    return doc.data()?['role'];
-  }
+  // Le constructeur accepte le `role` qui est passé par le SessionWrapper
+  final String role;
+  const TableauBord({super.key, required this.role});
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<String?>(
-      future: _getUserRole(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
+    // Ce widget agit comme un aiguilleur pour afficher le bon tableau de bord
+    // en fonction du rôle de l'utilisateur connecté.
+    switch (role) {
+      case 'employeur':
+        return const EmployeurDashboard();
 
-        final role = snapshot.data;
+      case 'chefSES':
+        return const ChefSESDashboard();
 
-        switch (role) {
-          case 'employeur':
-            return const EmployeurDashboard();
-          case 'chefSES':
-            return const ChefSESDashboard();
-          case 'préposé':
-            return const PreposeDashboard();
-          case 'décompteur':
-            return const DecompteurDashboard();
-          case 'directeur':
-            return const DirecteurDashboard();
-          case 'administrateur':
-            return const GestionUtilisateurs();
-          default:
-            return Scaffold(
-              appBar: AppBar(title: const Text("Rôle inconnu")),
-              body: const Center(
-                child: Text("Aucun tableau de bord trouvé pour ce rôle."),
+      case 'préposé':
+        return const PreposeDashboard();
+
+      case 'décompteur':
+        return const DecompteurDashboard();
+
+      case 'directeur':
+        return const DirecteurDashboard();
+
+      default:
+        // Un cas par défaut si le rôle n'est pas géré (sécurité)
+        return Scaffold(
+          appBar: AppBar(title: const Text("Erreur de Rôle")),
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                "Rôle utilisateur non reconnu : $role. Veuillez contacter l'administrateur.",
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16),
               ),
-            );
-        }
-      },
-    );
+            ),
+          ),
+        );
+    }
   }
 }

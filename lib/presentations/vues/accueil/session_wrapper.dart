@@ -37,7 +37,7 @@ class SessionWrapper extends StatelessWidget {
                 case 'préposé':
                 case 'décompteur':
                 case 'directeur':
-                  return const TableauBord();
+                  return const TableauBord(role: '');
                 case 'administrateur':
                   return const GestionUtilisateurs();
                 default:
