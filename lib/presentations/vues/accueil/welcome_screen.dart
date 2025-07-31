@@ -1,5 +1,9 @@
+// lib/presentations/vues/accueil/welcome_screen.dart
+
+import 'package:cnss_app/core/constantes.dart';
+import 'package:cnss_app/presentations/formulaires/formulaire_inscription.dart';
+import 'package:cnss_app/presentations/vues/authentification/connexion.dart';
 import 'package:flutter/material.dart';
-import '../../../core/constantes.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -92,13 +96,19 @@ class WelcomeScreen extends StatelessWidget {
 
                 // Boutons principaux
                 ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: 400),
+                  constraints: const BoxConstraints(maxWidth: 400),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       ElevatedButton.icon(
+                        // CORRECTION ICI : Remplacement de pushNamed par push
                         onPressed:
-                            () => Navigator.pushNamed(context, '/connexion'),
+                            () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ConnexionPage(),
+                              ),
+                            ),
                         icon: const Icon(Icons.login, size: 20),
                         label: const Padding(
                           padding: EdgeInsets.symmetric(vertical: 14),
@@ -121,8 +131,15 @@ class WelcomeScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 20),
                       OutlinedButton.icon(
+                        // CORRECTION ICI : Remplacement de pushNamed par push
                         onPressed:
-                            () => Navigator.pushNamed(context, '/inscription'),
+                            () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => const FormulaireInscription(),
+                              ),
+                            ),
                         icon: const Icon(
                           Icons.person_add_alt,
                           size: 20,

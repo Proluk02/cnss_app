@@ -1,12 +1,14 @@
-// presentations/vues/dashboard/worker_add_form.dart
+// lib/presentations/vues/dashboard/worker_add_form.dart
 
 import 'package:cnss_app/core/constantes.dart';
+import 'package:cnss_app/donnees/modeles/travailleur_modele.dart';
 import 'package:cnss_app/presentations/viewmodels/travailleur_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class WorkerAddForm extends StatefulWidget {
-  const WorkerAddForm({super.key});
+  final TravailleurModele? travailleur; // Si non-null, on est en mode édition
+  const WorkerAddForm({super.key, this.travailleur});
 
   @override
   State<WorkerAddForm> createState() => _WorkerAddFormState();
@@ -22,7 +24,25 @@ class _WorkerAddFormState extends State<WorkerAddForm> {
   final _communeController = TextEditingController();
   int _typeTravailleur = 1;
 
-  void _submit() {
+  bool get isEditing => widget.travailleur != null;
+
+  @override
+  void initState() {
+    super.initState();
+    if (isEditing) {
+      // Pré-remplir les champs si on est en mode édition
+      final t = widget.travailleur!;
+      _nomController.text = t.nom;
+      _postNomController.text = t.postNoms;
+      _prenomController.text = t.prenoms;
+      _matriculeController.text = t.matricule;
+      _immatriculationController.text = t.immatriculationCNSS;
+      _communeController.text = t.communeAffectation;
+      _typeTravailleur = t.typeTravailleur;
+    }
+  }
+
+  Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
       final data = {
         'nom': _nomController.text.trim(),
@@ -34,31 +54,37 @@ class _WorkerAddFormState extends State<WorkerAddForm> {
         'typeTravailleur': _typeTravailleur,
       };
 
-      context
-          .read<TravailleurViewModel>()
-          .ajouterTravailleur(data)
-          .then((_) {
-            Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Travailleur ${data['nom']} ajouté !'),
-                backgroundColor: kSuccessColor,
-              ),
-            );
-          })
-          .catchError((error) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text("Erreur: $error"),
-                backgroundColor: Colors.red,
-              ),
-            );
-          });
+      final vm = context.read<TravailleurViewModel>();
+      final action =
+          isEditing
+              ? vm.mettreAJourTravailleur(widget.travailleur!.id, data)
+              : vm.ajouterTravailleur(data);
+
+      try {
+        await action;
+        if (mounted) {
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Employé ${isEditing ? 'mis à jour' : 'ajouté'} !'),
+              backgroundColor: kSuccessColor,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("$e"), backgroundColor: kErrorColor),
+          );
+        }
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final vm = context.watch<TravailleurViewModel>();
+
     return Padding(
       padding: const EdgeInsets.all(kDefaultPadding),
       child: Form(
@@ -68,9 +94,9 @@ class _WorkerAddFormState extends State<WorkerAddForm> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Ajouter un Employé",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Text(
+                isEditing ? "Modifier un Employé" : "Ajouter un Employé",
+                style: kTitleStyle,
               ),
               const SizedBox(height: 20),
               TextFormField(
@@ -123,8 +149,14 @@ class _WorkerAddFormState extends State<WorkerAddForm> {
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: _submit,
-                child: const Text('Enregistrer l\'employé'),
+                onPressed: vm.isLoading ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 48),
+                ),
+                child:
+                    vm.isLoading
+                        ? const CircularProgressIndicator()
+                        : Text(isEditing ? 'Mettre à jour' : 'Enregistrer'),
               ),
             ],
           ),

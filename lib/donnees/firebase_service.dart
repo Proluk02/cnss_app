@@ -2,7 +2,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cnss_app/presentations/viewmodels/declaration_viewmodel.dart'; // Assurez-vous que ce chemin d'import est correct
+import 'package:cnss_app/presentations/viewmodels/declaration_viewmodel.dart';
 
 class FirebaseService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -78,7 +78,7 @@ class FirebaseService {
             .collection('utilisateurs')
             .doc(uid)
             .collection('travailleurs')
-            .orderBy('nom') // Optionnel: trier par nom
+            .orderBy('nom')
             .get();
     return snapshot.docs.map((doc) => doc.data()).toList();
   }
@@ -91,6 +91,39 @@ class FirebaseService {
             .collection('brouillons')
             .get();
     return snapshot.docs.map((doc) => doc.data()).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> getDeclarationsRecentes(String uid) async {
+    final snapshot =
+        await _db
+            .collection('utilisateurs')
+            .doc(uid)
+            .collection('declarations_finalisees')
+            .orderBy('dateFinalisation', descending: true)
+            .limit(5)
+            .get();
+    return snapshot.docs.map((doc) => doc.data()).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> getToutHistorique(String uid) async {
+    final snapshot =
+        await _db
+            .collection('utilisateurs')
+            .doc(uid)
+            .collection('declarations_finalisees')
+            .orderBy('dateFinalisation', descending: true)
+            .get();
+    return snapshot.docs.map((doc) => doc.data()).toList();
+  }
+
+  // MÉTHODE AJOUTÉE
+  Future<void> deleteTravailleur(String uid, String travailleurId) async {
+    await _db
+        .collection('utilisateurs')
+        .doc(uid)
+        .collection('travailleurs')
+        .doc(travailleurId)
+        .delete();
   }
 
   Future<void> finaliserDeclarationEnLigne(
@@ -106,7 +139,6 @@ class FirebaseService {
         .collection('declarations_finalisees')
         .doc(periode);
     batch.set(rapportRef, rapport.toMap());
-
     final brouillonsSnapshot =
         await _db
             .collection('utilisateurs')
@@ -117,12 +149,10 @@ class FirebaseService {
     for (var doc in brouillonsSnapshot.docs) {
       batch.delete(doc.reference);
     }
-
     final userRef = _db.collection('utilisateurs').doc(uid);
     batch.update(userRef, {
       'dernierePeriodeDeclaree': Timestamp.fromDate(datePeriode),
     });
-
     await batch.commit();
   }
 }
