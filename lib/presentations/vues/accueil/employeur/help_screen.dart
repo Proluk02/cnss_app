@@ -1,7 +1,7 @@
 // lib/presentations/vues/dashboard/help_screen.dart
 
-import 'package:flutter/material.dart';
 import 'package:cnss_app/core/constantes.dart';
+import 'package:flutter/material.dart';
 
 class HelpScreen extends StatelessWidget {
   const HelpScreen({super.key});
@@ -9,49 +9,106 @@ class HelpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ListView(
-        padding: const EdgeInsets.all(kDefaultPadding),
-        children: const [
-          Text(
-            "Foire Aux Questions",
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+      backgroundColor: kBackgroundColor,
+      body: CustomScrollView(
+        slivers: [
+          // En-tête de la page avec une image et un titre
+          const SliverAppBar(
+            backgroundColor: kBackgroundColor,
+            expandedHeight: 200.0,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              title: Text(
+                "Aide & Support",
+                style: TextStyle(color: kDarkText, fontWeight: FontWeight.bold),
+              ),
+              centerTitle: true,
+              background: Icon(
+                Icons.support_agent_outlined,
+                size: 100,
+                color: kPrimaryColor,
+              ),
+            ),
           ),
-          SizedBox(height: 16),
-          _HelpItem(
-            question: "Comment ajouter un nouvel employé ?",
-            answer:
-                "Allez dans l'onglet 'Employés' et cliquez sur le bouton flottant '+' en bas à droite. Remplissez tous les champs du formulaire et cliquez sur 'Enregistrer'. L'employé sera ajouté à votre liste et synchronisé avec le serveur.",
-            icon: Icons.person_add_alt_1,
+
+          // Liste des questions
+          SliverList(
+            delegate: SliverChildListDelegate([
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  kDefaultPadding,
+                  kDefaultPadding,
+                  kDefaultPadding,
+                  8,
+                ),
+                child: Text("Foire Aux Questions", style: kTitleStyle),
+              ),
+              const _HelpItem(
+                question: "Comment ajouter un nouvel employé ?",
+                answer:
+                    "Allez dans l'onglet 'Employés' et cliquez sur le bouton '+' en haut à droite. Remplissez tous les champs du formulaire et cliquez sur 'Enregistrer'.",
+                icon: Icons.person_add_alt_1,
+              ),
+              const _HelpItem(
+                question: "Comment faire une déclaration ?",
+                answer:
+                    "Allez dans l'onglet 'Déclarer'. La période en cours s'affichera. Pour chaque employé, entrez le salaire brut et/ou les heures travaillées. Vos modifications sont sauvegardées automatiquement.",
+                icon: Icons.note_add_outlined,
+              ),
+              const _HelpItem(
+                question: "Comment finaliser une déclaration ?",
+                answer:
+                    "Une fois toutes les informations remplies dans l'onglet 'Déclarer', cliquez sur le bouton 'Finaliser' en haut de l'écran. Confirmez votre choix pour soumettre la déclaration à la CNSS.",
+                icon: Icons.playlist_add_check_circle_outlined,
+              ),
+              const _HelpItem(
+                question: "Que signifie le statut 'En attente' ?",
+                answer:
+                    "Ce statut indique que votre déclaration a été soumise avec succès et est en cours de traitement par la CNSS. Vous serez notifié lorsque son statut changera (Validée ou Rejetée).",
+                icon: Icons.hourglass_top_rounded,
+              ),
+              const _HelpItem(
+                question: "Où voir mes anciennes déclarations ?",
+                answer:
+                    "Toutes vos déclarations finalisées sont disponibles dans l'onglet 'Historique'. Vous pouvez y consulter les détails et imprimer le récépissé de chaque période.",
+                icon: Icons.history_outlined,
+              ),
+              const _HelpItem(
+                question: "Que faire si ma déclaration est 'Rejetée' ?",
+                answer:
+                    "Une déclaration rejetée sera accompagnée d'un motif de rejet visible dans ses détails. Contactez votre centre de gestion pour plus d'informations sur les démarches à suivre.",
+                icon: Icons.cancel_outlined,
+              ),
+              const SizedBox(height: 40), // Espace avant le footer
+            ]),
           ),
-          _HelpItem(
-            question: "Comment faire une déclaration ?",
-            answer:
-                "Allez dans l'onglet 'Déclarer'. La période en cours s'affichera. Pour chaque employé de la liste, entrez le salaire brut et/ou les heures travaillées. Vos modifications sont sauvegardées automatiquement en tant que brouillon.",
-            icon: Icons.note_add_outlined,
-          ),
-          _HelpItem(
-            question: "Comment finaliser une déclaration ?",
-            answer:
-                "Une fois que vous avez rempli toutes les informations pour la période dans l'onglet 'Déclarer', cliquez sur le bouton 'Finaliser' en haut de l'écran. Confirmez votre choix pour soumettre la déclaration à la CNSS.",
-            icon: Icons.playlist_add_check_circle_outlined,
-          ),
-          _HelpItem(
-            question: "Que signifie le statut 'En attente' ?",
-            answer:
-                "Ce statut indique que votre déclaration a été soumise avec succès à la CNSS. Elle est maintenant en cours de traitement par nos agents. Vous recevrez une notification lorsque son statut changera (Validée ou Rejetée).",
-            icon: Icons.hourglass_top_rounded,
-          ),
-          _HelpItem(
-            question: "Où puis-je voir mes anciennes déclarations ?",
-            answer:
-                "Toutes vos déclarations finalisées sont disponibles dans l'onglet 'Historique'. Vous pouvez y consulter les détails de chaque période.",
-            icon: Icons.history_outlined,
-          ),
-          _HelpItem(
-            question: "Que faire si ma déclaration est 'Rejetée' ?",
-            answer:
-                "Une déclaration rejetée sera accompagnée d'un motif de rejet visible dans ses détails. Vous devrez la corriger et la soumettre à nouveau. Contactez votre centre de gestion pour plus d'informations.",
-            icon: Icons.cancel_outlined,
+
+          // Footer avec vos informations
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 24.0),
+              child: Column(
+                children: [
+                  const Text(
+                    "Developed by",
+                    style: TextStyle(color: kGreyText, fontSize: 12),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "Prosper Lukeka",
+                    style: kSubtitleStyle.copyWith(
+                      color: kPrimaryColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  const Text(
+                    "prolukeka@gmail.com",
+                    style: TextStyle(color: kGreyText, fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -72,23 +129,25 @@ class _HelpItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: ExpansionTile(
-        leading: Icon(icon, color: Theme.of(context).primaryColor),
-        title: Text(
-          question,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+      child: Card(
+        elevation: 2,
+        shadowColor: Colors.black12,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(kCardRadius),
         ),
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Text(
+        child: ExpansionTile(
+          leading: Icon(icon, color: kPrimaryColor),
+          title: Text(question, style: kSubtitleStyle.copyWith(fontSize: 16)),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          children: [
+            Text(
               answer,
-              style: const TextStyle(color: Colors.black54, height: 1.5),
+              style: kLabelStyle.copyWith(height: 1.5, fontSize: 14),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

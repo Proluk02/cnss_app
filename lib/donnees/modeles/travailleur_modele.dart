@@ -47,17 +47,38 @@ class TravailleurModele {
 
   factory TravailleurModele.fromMap(Map<String, dynamic> map) {
     return TravailleurModele(
-      id: map['id'],
-      matricule: map['matricule'],
-      immatriculationCNSS: map['immatriculationCNSS'],
-      nom: map['nom'],
-      postNoms: map['postNoms'],
-      prenoms: map['prenoms'],
-      typeTravailleur: map['typeTravailleur'],
-      communeAffectation: map['communeAffectation'],
+      id: map['id'] ?? '',
+      matricule: map['matricule'] ?? '',
+      immatriculationCNSS: map['immatriculationCNSS'] ?? '',
+      nom: map['nom'] ?? '',
+      postNoms: map['postNoms'] ?? '',
+      prenoms: map['prenoms'] ?? '',
+      typeTravailleur: map['typeTravailleur'] ?? 1,
+      communeAffectation: map['communeAffectation'] ?? '',
       enfantsBeneficiaires: map['enfantsBeneficiaires'] ?? 0,
       syncStatus: map['syncStatus'] ?? 'synced',
-      lastModified: DateTime.parse(map['lastModified']),
+      lastModified:
+          map['lastModified'] != null
+              ? DateTime.parse(map['lastModified'])
+              : DateTime.now(),
+    );
+  }
+
+  // MÉTHODE AJOUTÉE : Factory statique pour créer une instance vide
+  // C'est une méthode de secours utilisée dans le service PDF si un travailleur
+  // déclaré n'est plus dans la liste des travailleurs actuels.
+  static TravailleurModele empty() {
+    return TravailleurModele(
+      id: '',
+      matricule: 'N/A',
+      immatriculationCNSS: 'N/A',
+      nom: 'Employé',
+      postNoms: 'Introuvable',
+      prenoms: '',
+      typeTravailleur: 1,
+      communeAffectation: '',
+      enfantsBeneficiaires: 0,
+      lastModified: DateTime.now(),
     );
   }
 }

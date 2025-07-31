@@ -1,13 +1,15 @@
 // lib/presentations/vues/dashboard/employeur_dashboard.dart
 
 import 'package:cnss_app/core/constantes.dart';
+import 'package:cnss_app/presentations/vues/accueil/employeur/worker_add_form.dart';
+import 'package:cnss_app/presentations/vues/dashboard/notifications_screen.dart';
+import 'package:cnss_app/presentations/vues/dashboard/settings_screen.dart';
+
 import 'package:cnss_app/presentations/viewmodels/auth_viewmodel.dart';
 import 'package:cnss_app/presentations/viewmodels/declaration_viewmodel.dart';
 import 'package:cnss_app/presentations/viewmodels/travailleur_viewmodel.dart';
-import 'package:cnss_app/presentations/vues/accueil/employeur/worker_add_form.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 import 'dashboard_home.dart';
 import 'workers_list.dart';
@@ -15,28 +17,8 @@ import 'declaration_entry_screen.dart';
 import 'history_screen.dart';
 import 'help_screen.dart';
 
-// Écrans placeholders pour la navigation
-class NotificationsScreen extends StatelessWidget {
-  const NotificationsScreen({super.key});
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text("Notifications")),
-    body: const Center(child: Text("Écran des Notifications")),
-  );
-}
-
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text("Paramètres")),
-    body: const Center(child: Text("Écran des Paramètres")),
-  );
-}
-
 class EmployeurDashboard extends StatefulWidget {
   const EmployeurDashboard({super.key});
-
   @override
   State<EmployeurDashboard> createState() => _EmployeurDashboardState();
 }
@@ -44,10 +26,15 @@ class EmployeurDashboard extends StatefulWidget {
 class _EmployeurDashboardState extends State<EmployeurDashboard> {
   int _selectedIndex = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    // Charger les données de l'utilisateur au démarrage du dashboard
+    context.read<AuthViewModel>().loadCurrentUser();
+  }
+
   void _navigateToTab(int index) {
-    if (index >= 0 && index < 5) {
-      setState(() => _selectedIndex = index);
-    }
+    if (index >= 0 && index < 5) setState(() => _selectedIndex = index);
   }
 
   void _showAddWorkerDialog() {
@@ -112,12 +99,16 @@ class _EmployeurDashboardState extends State<EmployeurDashboard> {
             onSelected: (value) {
               if (value == 'logout')
                 _logout();
+              // ignore: curly_braces_in_flow_control_structures
               else if (value == 'settings')
+                // ignore: curly_braces_in_flow_control_structures
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const SettingsScreen()),
                 );
+              // ignore: curly_braces_in_flow_control_structures
               else if (value == 'notifications')
+                // ignore: curly_braces_in_flow_control_structures
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -164,16 +155,26 @@ class _EmployeurDashboardState extends State<EmployeurDashboard> {
       drawer: _buildCustomDrawer(context),
       body: Container(color: kBackgroundColor, child: tabs[_selectedIndex]),
 
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _navigateToTab(2),
-        backgroundColor:
-            _selectedIndex == 2
-                ? kPrimaryColor
-                : kSecondaryColor.withOpacity(0.9),
-        elevation: 2.0,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.file_copy, color: Colors.white),
-      ),
+      floatingActionButton:
+          _selectedIndex == 1
+              ? FloatingActionButton(
+                onPressed: _showAddWorkerDialog,
+                backgroundColor: kAccentColor,
+                foregroundColor: Colors.white,
+                tooltip: 'Ajouter un employé',
+                child: const Icon(Icons.person_add_alt_1),
+              )
+              : FloatingActionButton(
+                onPressed: () => _navigateToTab(2),
+                backgroundColor:
+                    _selectedIndex == 2
+                        ? kPrimaryColor
+                        : kSecondaryColor.withOpacity(0.9),
+                tooltip: 'Nouvelle Déclaration',
+                elevation: 2.0,
+                shape: const CircleBorder(),
+                child: const Icon(Icons.file_copy, color: Colors.white),
+              ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
       bottomNavigationBar: _NotchedBottomBar(
@@ -184,68 +185,85 @@ class _EmployeurDashboardState extends State<EmployeurDashboard> {
   }
 
   Widget _buildCustomDrawer(BuildContext context) {
-    final User? currentUser = FirebaseAuth.instance.currentUser;
-    return Drawer(
-      child: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
-            decoration: const BoxDecoration(gradient: kAppBarGradient),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Image.asset('assets/images/logo_cnss.png', height: 48),
+    return Consumer<AuthViewModel>(
+      builder: (context, authVM, child) {
+        return Drawer(
+          child: Column(
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+                decoration: const BoxDecoration(gradient: kAppBarGradient),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Image.asset(
+                        'assets/images/logo_cnss.png',
+                        height: 48,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      authVM.currentUser?.nom ?? "Nom de l'Employeur",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      authVM.currentUser?.email ?? "email@employeur.com",
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  currentUser?.displayName ?? "Nom de l'Employeur",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  children: [
+                    _drawerItem(0, 'Tableau de bord', Icons.dashboard_outlined),
+                    _drawerItem(
+                      1,
+                      'Gestion des employés',
+                      Icons.people_alt_outlined,
+                    ),
+                    _drawerItem(
+                      2,
+                      'Nouvelle déclaration',
+                      Icons.note_add_outlined,
+                    ),
+                    _drawerItem(3, 'Historique', Icons.history_outlined),
+                    _drawerItem(
+                      4,
+                      'Aide & Support',
+                      Icons.help_outline_outlined,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  currentUser?.email ?? "email@employeur.com",
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+              ),
+              const Divider(height: 1),
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text(
+                  'CnssApp v1.0.0',
+                  style: TextStyle(color: kGreyText, fontSize: 12),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              children: [
-                _drawerItem(0, 'Tableau de bord', Icons.dashboard_outlined),
-                _drawerItem(
-                  1,
-                  'Gestion des employés',
-                  Icons.people_alt_outlined,
-                ),
-                _drawerItem(2, 'Nouvelle déclaration', Icons.note_add_outlined),
-                _drawerItem(3, 'Historique', Icons.history_outlined),
-                _drawerItem(4, 'Aide & Support', Icons.help_outline_outlined),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text(
-              'CnssApp v1.0.0',
-              style: TextStyle(color: kGreyText, fontSize: 12),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -287,7 +305,6 @@ class _NotchedBottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // CORRECTION : Le BuildContext est maintenant disponible ici.
     return BottomAppBar(
       elevation: 10.0,
       color: Colors.white,
@@ -298,39 +315,25 @@ class _NotchedBottomBar extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildNavItem(
-                  context: context,
-                  icon: Icons.home_filled,
-                  index: 0,
-                  label: "Accueil",
-                ),
-                _buildNavItem(
-                  context: context,
-                  icon: Icons.people,
-                  index: 1,
-                  label: "Employés",
-                ),
-              ],
+            SizedBox(
+              width: MediaQuery.of(context).size.width / 2 - 40,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildNavItem(context, Icons.home_filled, 0, "Accueil"),
+                  _buildNavItem(context, Icons.people, 1, "Employés"),
+                ],
+              ),
             ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildNavItem(
-                  context: context,
-                  icon: Icons.history,
-                  index: 3,
-                  label: "Historique",
-                ),
-                _buildNavItem(
-                  context: context,
-                  icon: Icons.help,
-                  index: 4,
-                  label: "Aide",
-                ),
-              ],
+            SizedBox(
+              width: MediaQuery.of(context).size.width / 2 - 40,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildNavItem(context, Icons.history, 3, "Historique"),
+                  _buildNavItem(context, Icons.help, 4, "Aide"),
+                ],
+              ),
             ),
           ],
         ),
@@ -338,23 +341,20 @@ class _NotchedBottomBar extends StatelessWidget {
     );
   }
 
-  Widget _buildNavItem({
-    required BuildContext context,
-    required IconData icon,
-    required int index,
-    required String label,
-  }) {
+  Widget _buildNavItem(
+    BuildContext context,
+    IconData icon,
+    int index,
+    String label,
+  ) {
     final isSelected = selectedIndex == index;
-    return SizedBox(
-      width:
-          MediaQuery.of(context).size.width /
-          5, // Utilise le BuildContext valide
-      height: 60,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => onTap(index),
-          borderRadius: BorderRadius.circular(30),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => onTap(index),
+        borderRadius: BorderRadius.circular(30),
+        child: SizedBox(
+          width: 70,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -371,6 +371,7 @@ class _NotchedBottomBar extends StatelessWidget {
                   fontSize: 10,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

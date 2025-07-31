@@ -1,11 +1,11 @@
 // lib/presentations/viewmodels/declaration_viewmodel.dart
 
-import 'package:flutter/foundation.dart';
-import 'package:intl/intl.dart';
 import 'package:cnss_app/donnees/modeles/declaration_modele.dart';
 import 'package:cnss_app/donnees/modeles/travailleur_modele.dart';
 import 'package:cnss_app/donnees/firebase_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 
 enum StatutEmployeur { EN_ORDRE, EN_RETARD, A_JOUR, INDETERMINE }
 
@@ -116,7 +116,6 @@ class DeclarationViewModel extends ChangeNotifier {
       final donneesEmployeur = await _firebase.getDonneesUtilisateur(uid);
       final ts = donneesEmployeur?['dernierePeriodeDeclaree'] as Timestamp?;
       final dernierePeriodeDeclaree = ts?.toDate();
-
       periodeActuelle =
           (dernierePeriodeDeclaree == null)
               ? DateTime(DateTime.now().year, DateTime.now().month - 1)
@@ -167,7 +166,6 @@ class DeclarationViewModel extends ChangeNotifier {
   Future<void> chargerBrouillon({bool notify = true}) async {
     if (periodeActuelle == null) return;
     final periodeCle = DateFormat('yyyy-MM').format(periodeActuelle!);
-
     final brouillonSauvegarde =
         (await _firebase.getTousLesBrouillons(uid))
             .where((b) => b['periode'] == periodeCle)
@@ -233,7 +231,7 @@ class DeclarationViewModel extends ChangeNotifier {
               .toList();
       if (lignesValides.isEmpty) {
         throw Exception(
-          "Veuillez renseigner le salaire pour au moins un employé avant de finaliser.",
+          "Veuillez renseigner le salaire pour au moins un employé.",
         );
       }
       final rapport = _calculerRapportFinal(lignesValides);
@@ -242,6 +240,7 @@ class DeclarationViewModel extends ChangeNotifier {
         rapport.periode,
         periodeActuelle!,
         rapport,
+        lignesValides,
       );
       await initialiser();
     } catch (e) {

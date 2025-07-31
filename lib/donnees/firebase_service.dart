@@ -1,6 +1,7 @@
 // lib/donnees/firebase_service.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cnss_app/donnees/modeles/declaration_modele.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cnss_app/presentations/viewmodels/declaration_viewmodel.dart';
 
@@ -23,12 +24,13 @@ class FirebaseService {
     );
     final user = cred.user;
     if (user != null) {
+      // Mettre à jour le nom d'affichage dans Firebase Auth
+      await user.updateDisplayName(nom);
+      // Créer le document dans Firestore
       await _db.collection('utilisateurs').doc(user.uid).set({
-        'uid': user.uid,
-        'email': email,
-        'nom': nom,
-        'role': role,
+        'uid': user.uid, 'email': email, 'nom': nom, 'role': role,
         'dernierePeriodeDeclaree': null,
+        'numAffiliation': '', // Ajout du champ affiliation
       });
     }
     return user;
@@ -54,6 +56,22 @@ class FirebaseService {
     return data != null ? data['role'] as String? : null;
   }
 
+  Future<void> updateUserProfile(
+    String uid, {
+    required String nom,
+    required String numAffiliation,
+  }) async {
+    await _auth.currentUser?.updateDisplayName(nom);
+    await _db.collection('utilisateurs').doc(uid).update({
+      'nom': nom,
+      'numAffiliation': numAffiliation,
+    });
+  }
+
+  Future<void> changePassword(String email) async {
+    await _auth.sendPasswordResetEmail(email: email);
+  }
+
   Future<void> syncTravailleur(String uid, Map<String, dynamic> data) async {
     await _db
         .collection('utilisateurs')
@@ -61,6 +79,15 @@ class FirebaseService {
         .collection('travailleurs')
         .doc(data['id'])
         .set(data, SetOptions(merge: true));
+  }
+
+  Future<void> deleteTravailleur(String uid, String travailleurId) async {
+    await _db
+        .collection('utilisateurs')
+        .doc(uid)
+        .collection('travailleurs')
+        .doc(travailleurId)
+        .delete();
   }
 
   Future<void> syncBrouillon(String uid, Map<String, dynamic> data) async {
@@ -116,14 +143,19 @@ class FirebaseService {
     return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
-  // MÉTHODE AJOUTÉE
-  Future<void> deleteTravailleur(String uid, String travailleurId) async {
-    await _db
-        .collection('utilisateurs')
-        .doc(uid)
-        .collection('travailleurs')
-        .doc(travailleurId)
-        .delete();
+  Future<List<Map<String, dynamic>>> getFeuilleDePaieArchivee(
+    String uid,
+    String periode,
+  ) async {
+    final snapshot =
+        await _db
+            .collection('utilisateurs')
+            .doc(uid)
+            .collection('declarations_finalisees')
+            .doc(periode)
+            .collection('feuille_de_paie')
+            .get();
+    return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
   Future<void> finaliserDeclarationEnLigne(
@@ -131,6 +163,7 @@ class FirebaseService {
     String periode,
     DateTime datePeriode,
     RapportDeclaration rapport,
+    List<DeclarationTravailleurModele> lignesDeclarees,
   ) async {
     final batch = _db.batch();
     final rapportRef = _db
@@ -139,6 +172,12 @@ class FirebaseService {
         .collection('declarations_finalisees')
         .doc(periode);
     batch.set(rapportRef, rapport.toMap());
+    for (var ligne in lignesDeclarees) {
+      final feuillePaieRef = rapportRef
+          .collection('feuille_de_paie')
+          .doc(ligne.travailleurId);
+      batch.set(feuillePaieRef, ligne.toMap());
+    }
     final brouillonsSnapshot =
         await _db
             .collection('utilisateurs')

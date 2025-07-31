@@ -10,6 +10,7 @@ class UtilisateurModele {
     required this.nom,
     required this.email,
     required this.role,
+    required String numAffiliation,
   });
 
   factory UtilisateurModele.fromMap(Map<String, dynamic> data) {
@@ -18,6 +19,7 @@ class UtilisateurModele {
       nom: data['nom'] ?? '',
       email: data['email'] ?? '',
       role: data['role'] ?? 'employeur',
+      numAffiliation: '',
     );
   }
 
