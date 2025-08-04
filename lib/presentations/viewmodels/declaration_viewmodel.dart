@@ -15,6 +15,7 @@ class RapportDeclaration {
   final String periode;
   final double totalDesCotisations;
   final StatutDeclaration statut;
+  final String? motifRejet;
   final double montantTotalBrut;
   final int nombreTravailleurs;
   final int nombreAssimiles;
@@ -27,6 +28,7 @@ class RapportDeclaration {
     required this.periode,
     required this.totalDesCotisations,
     required this.statut,
+    this.motifRejet,
     required this.montantTotalBrut,
     required this.nombreTravailleurs,
     required this.nombreAssimiles,
@@ -41,6 +43,7 @@ class RapportDeclaration {
       'periode': periode,
       'totalDesCotisations': totalDesCotisations,
       'statut': statut.toString().split('.').last,
+      'motifRejet': motifRejet,
       'montantTotalBrut': montantTotalBrut,
       'nombreTravailleurs': nombreTravailleurs,
       'nombreAssimiles': nombreAssimiles,
@@ -60,6 +63,7 @@ class RapportDeclaration {
         (e) => e.toString().split('.').last == map['statut'],
         orElse: () => StatutDeclaration.INCONNU,
       ),
+      motifRejet: map['motifRejet'],
       montantTotalBrut: (map['montantTotalBrut'] ?? 0.0).toDouble(),
       nombreTravailleurs: map['nombreTravailleurs'] ?? 0,
       nombreAssimiles: map['nombreAssimiles'] ?? 0,
@@ -280,6 +284,7 @@ class DeclarationViewModel extends ChangeNotifier {
       cotisationRisquePro: cotisationRisquePro,
       cotisationFamille: cotisationFamille,
       totalDesCotisations: totalDesCotisations,
+      motifRejet: null, // Le motif est nul lors de la création
     );
   }
 }

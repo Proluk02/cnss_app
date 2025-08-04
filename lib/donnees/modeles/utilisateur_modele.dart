@@ -23,6 +23,8 @@ class UtilisateurModele {
     );
   }
 
+  get numAffiliation => null;
+
   Map<String, dynamic> toMap() {
     return {'uid': uid, 'nom': nom, 'email': email, 'role': role};
   }

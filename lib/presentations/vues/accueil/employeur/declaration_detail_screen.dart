@@ -63,13 +63,17 @@ class _DeclarationDetailScreenState extends State<DeclarationDetailScreen> {
 
   Future<void> _handlePrint() async {
     setState(() => _isPrinting = true);
-
     if (_lignesArchivees != null) {
       final currentUser = FirebaseAuth.instance.currentUser;
+      final userData = await FirebaseService().getDonneesUtilisateur(
+        currentUser!.uid,
+      );
+      final numAffiliation = userData?['numAffiliation'] ?? 'N/A';
+
       await PdfService().imprimerDeclaration(
         rapport: widget.rapport,
-        nomEmployeur: currentUser?.displayName ?? "Employeur",
-        numAffiliation: "N/A", // TODO: A récupérer du profil
+        nomEmployeur: currentUser.displayName ?? "Employeur",
+        numAffiliation: numAffiliation,
         lignesDeclarees: _lignesArchivees!,
         tousLesTravailleurs: widget.travailleurVM.travailleurs,
       );
@@ -80,7 +84,6 @@ class _DeclarationDetailScreenState extends State<DeclarationDetailScreen> {
         ),
       );
     }
-
     if (mounted) {
       setState(() => _isPrinting = false);
     }
@@ -90,89 +93,40 @@ class _DeclarationDetailScreenState extends State<DeclarationDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBackgroundColor,
-      appBar: AppBar(
-        title: Text('Détails - ${widget.rapport.periode}'),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: kAppBarGradient),
-        ),
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body:
-          _loadingError != null
-              ? Center(child: Text(_loadingError!))
-              : _lignesArchivees == null
-              ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-                padding: const EdgeInsets.all(kDefaultPadding),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _StatusCard(widget.rapport.statut),
-                    const SizedBox(height: 24),
-                    _SummaryCard(
-                      title: "Résumé des Cotisations",
-                      icon: Icons.receipt_long_outlined,
-                      children: [
-                        _buildDetailRow(
-                          "Montant Brut Total :",
-                          widget.rapport.montantTotalBrut,
-                        ),
-                        const Divider(height: 20),
-                        _buildDetailRow(
-                          "Branche Pensions (10%) :",
-                          widget.rapport.cotisationPension,
-                          isSubtle: true,
-                        ),
-                        _buildDetailRow(
-                          "Branche Risques Pro. (1.5%) :",
-                          widget.rapport.cotisationRisquePro,
-                          isSubtle: true,
-                        ),
-                        _buildDetailRow(
-                          "Branche Famille (6.5%) :",
-                          widget.rapport.cotisationFamille,
-                          isSubtle: true,
-                        ),
-                        const Divider(thickness: 1.5, height: 20),
-                        _buildDetailRow(
-                          "TOTAL DES COTISATIONS :",
-                          widget.rapport.totalDesCotisations,
-                          isTotal: true,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    _SummaryCard(
-                      title: "Détails sur les Employés",
-                      icon: Icons.people_outline,
-                      children: [
-                        _buildDetailRow(
-                          "Nombre de Travailleurs :",
-                          widget.rapport.nombreTravailleurs.toDouble(),
-                          isNumeric: false,
-                        ),
-                        _buildDetailRow(
-                          "Nombre d'Assimilés :",
-                          widget.rapport.nombreAssimiles.toDouble(),
-                          isNumeric: false,
-                        ),
-                        _buildDetailRow(
-                          "Montant Revenus Assimilés :",
-                          widget.rapport.montantRev,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    if (widget.rapport.statut == StatutDeclaration.REJETEE)
-                      _RejectionCard("Le montant total brut semble incorrect."),
-                  ],
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 220.0,
+            pinned: true,
+            iconTheme: const IconThemeData(color: Colors.white),
+            flexibleSpace: FlexibleSpaceBar(
+              title: Text(
+                'Déclaration ${widget.rapport.periode}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
+              centerTitle: true,
+              background: Container(
+                decoration: const BoxDecoration(gradient: kAppBarGradient),
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 40.0),
+                  child: _StatusHeader(rapport: widget.rapport),
+                ),
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(child: _buildBody()),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed:
             (_isPrinting || _lignesArchivees == null) ? null : _handlePrint,
         label:
-            _isPrinting ? const Text("Génération...") : const Text("Imprimer"),
+            _isPrinting
+                ? const Text("Génération...")
+                : const Text("Imprimer le Récépissé"),
         icon:
             _isPrinting
                 ? const SizedBox(
@@ -189,9 +143,135 @@ class _DeclarationDetailScreenState extends State<DeclarationDetailScreen> {
       ),
     );
   }
+
+  Widget _buildBody() {
+    if (_loadingError != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Text(_loadingError!),
+        ),
+      );
+    }
+    if (_lignesArchivees == null) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(kDefaultPadding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (widget.rapport.statut == StatutDeclaration.REJETEE &&
+              widget.rapport.motifRejet != null &&
+              widget.rapport.motifRejet!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 24.0),
+              child: _RejectionCard(widget.rapport.motifRejet!),
+            ),
+
+          _SummaryCard(
+            title: "Résumé des Cotisations",
+            icon: Icons.receipt_long_outlined,
+            children: [
+              _buildDetailRow(
+                "Montant Brut Total :",
+                widget.rapport.montantTotalBrut,
+              ),
+              const Divider(height: 20),
+              _buildDetailRow(
+                "Branche Pensions (10%) :",
+                widget.rapport.cotisationPension,
+                isSubtle: true,
+              ),
+              _buildDetailRow(
+                "Branche Risques Pro. (1.5%) :",
+                widget.rapport.cotisationRisquePro,
+                isSubtle: true,
+              ),
+              _buildDetailRow(
+                "Branche Famille (6.5%) :",
+                widget.rapport.cotisationFamille,
+                isSubtle: true,
+              ),
+              const Divider(thickness: 1.5, height: 20),
+              _buildDetailRow(
+                "TOTAL DES COTISATIONS :",
+                widget.rapport.totalDesCotisations,
+                isTotal: true,
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _SummaryCard(
+            title: "Détails sur les Employés Déclarés",
+            icon: Icons.people_outline,
+            children: [
+              _buildDetailRow(
+                "Nombre de Travailleurs :",
+                widget.rapport.nombreTravailleurs.toDouble(),
+                isNumeric: false,
+              ),
+              _buildDetailRow(
+                "Nombre d'Assimilés :",
+                widget.rapport.nombreAssimiles.toDouble(),
+                isNumeric: false,
+              ),
+              _buildDetailRow(
+                "Montant Revenus Assimilés :",
+                widget.rapport.montantRev,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-// Les widgets enfants sont inclus ici pour la complétude.
+class _StatusHeader extends StatelessWidget {
+  final RapportDeclaration rapport;
+  const _StatusHeader({required this.rapport});
+
+  @override
+  Widget build(BuildContext context) {
+    IconData icon;
+    String title;
+    switch (rapport.statut) {
+      case StatutDeclaration.VALIDEE:
+        icon = Icons.check_circle;
+        title = "Validée";
+        break;
+      case StatutDeclaration.REJETEE:
+        icon = Icons.cancel;
+        title = "Rejetée";
+        break;
+      default:
+        icon = Icons.hourglass_top_rounded;
+        title = "En attente";
+    }
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, color: Colors.white, size: 60),
+        const SizedBox(height: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            shadows: [Shadow(blurRadius: 2)],
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 class _SummaryCard extends StatelessWidget {
   final String title;
@@ -202,6 +282,7 @@ class _SummaryCard extends StatelessWidget {
     required this.icon,
     required this.children,
   });
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -218,7 +299,7 @@ class _SummaryCard extends StatelessWidget {
             Row(
               children: [
                 Icon(icon, color: kPrimaryColor),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
                 Text(title, style: kTitleStyle.copyWith(fontSize: 18)),
               ],
             ),
@@ -262,84 +343,10 @@ Widget _buildDetailRow(
   );
 }
 
-class _StatusCard extends StatelessWidget {
-  final StatutDeclaration status;
-  const _StatusCard(this.status);
-  @override
-  Widget build(BuildContext context) {
-    String title;
-    String subtitle;
-    IconData icon;
-    Color color;
-    switch (status) {
-      case StatutDeclaration.EN_ATTENTE:
-        title = "En attente de traitement";
-        subtitle =
-            "Votre déclaration est en cours de vérification par la CNSS.";
-        icon = Icons.hourglass_top_rounded;
-        color = kWarningColor;
-        break;
-      case StatutDeclaration.VALIDEE:
-        title = "Déclaration Validée";
-        subtitle = "Cette déclaration a été traitée et validée avec succès.";
-        icon = Icons.check_circle;
-        color = kSuccessColor;
-        break;
-      case StatutDeclaration.REJETEE:
-        title = "Déclaration Rejetée";
-        subtitle = "Un problème a été détecté. Voir le motif ci-dessous.";
-        icon = Icons.cancel;
-        color = kErrorColor;
-        break;
-      default:
-        title = "Statut Inconnu";
-        subtitle = "Le statut de cette déclaration n'a pas pu être déterminé.";
-        icon = Icons.help_outline;
-        color = Colors.grey;
-        break;
-    }
-    return Card(
-      elevation: 4,
-      color: color,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(kCardRadius),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            Icon(icon, color: Colors.white, size: 40),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _RejectionCard extends StatelessWidget {
   final String reason;
   const _RejectionCard(this.reason);
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -367,7 +374,10 @@ class _RejectionCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(reason, style: const TextStyle(height: 1.5)),
+                  Text(
+                    reason,
+                    style: const TextStyle(height: 1.5, color: kDarkText),
+                  ),
                 ],
               ),
             ),
@@ -376,20 +386,4 @@ class _RejectionCard extends StatelessWidget {
       ),
     );
   }
-}
-
-// Assurez-vous que le modèle Travailleur a bien une factory `empty()`
-extension EmptyTravailleur on TravailleurModele {
-  static TravailleurModele empty() => TravailleurModele(
-    id: '',
-    matricule: '',
-    immatriculationCNSS: '',
-    nom: 'Introuvable',
-    postNoms: '',
-    prenoms: '',
-    typeTravailleur: 1,
-    communeAffectation: '',
-    enfantsBeneficiaires: 0,
-    lastModified: DateTime.now(),
-  );
 }

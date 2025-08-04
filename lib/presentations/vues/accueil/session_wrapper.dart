@@ -1,10 +1,10 @@
+import 'package:cnss_app/presentations/vues/admin/admin_dashboard.dart';
 import 'package:cnss_app/presentations/vues/tableau_bord.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../donnees/firebase_service.dart';
 import '../authentification/connexion.dart';
-import '../admin/gestion_utilisateurs.dart';
 
 class SessionWrapper extends StatelessWidget {
   const SessionWrapper({super.key});
@@ -39,7 +39,7 @@ class SessionWrapper extends StatelessWidget {
                 case 'directeur':
                   return const TableauBord(role: '');
                 case 'administrateur':
-                  return const GestionUtilisateurs();
+                  return const AdminDashboard();
                 default:
                   return const ConnexionPage();
               }

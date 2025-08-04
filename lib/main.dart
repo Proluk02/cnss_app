@@ -9,27 +9,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
-// --- IMPORTS SQFLITE RETIRÉS ---
-// import 'package:flutter/foundation.dart' show kIsWeb;
-// import 'package:sqflite/sqflite.dart';
-// import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
-
 import 'donnees/firebase_service.dart';
 import 'firebase_options.dart';
 import 'presentations/vues/accueil/splash_screen.dart';
 import 'presentations/vues/accueil/welcome_screen.dart';
-import 'presentations/vues/admin/gestion_utilisateurs.dart';
-import 'presentations/vues/authentification/connexion.dart';
+import 'presentations/vues/admin/admin_dashboard.dart'; // MISE À JOUR
 import 'presentations/vues/tableau_bord.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // --- BLOC D'INITIALISATION SQFLITE POUR LE WEB RETIRÉ ---
-  // if (kIsWeb) {
-  //   databaseFactory = databaseFactoryFfiWeb;
-  // }
-
   await initializeDateFormatting('fr_FR', null);
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const CNSSApp());
@@ -40,13 +28,13 @@ class CNSSApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Le AuthViewModel est fourni à la racine pour gérer l'authentification globale.
     return ChangeNotifierProvider(
       create: (_) => AuthViewModel(),
       child: MaterialApp(
         title: 'CnssApp',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(primarySwatch: Colors.blue),
+        // CORRECTION : onGenerateRoute est supprimé. 'home' gère tout.
         home: const SessionWrapper(),
       ),
     );
@@ -94,9 +82,9 @@ class SessionWrapper extends StatelessWidget {
                       case 'directeur':
                         return TableauBord(role: role!);
                       case 'administrateur':
-                        return const GestionUtilisateurs();
+                        // MISE À JOUR : Affiche le nouveau dashboard de l'admin
+                        return const AdminDashboard();
                       default:
-                        // Cas où l'utilisateur est authentifié mais son rôle est manquant ou invalide.
                         return const WelcomeScreen();
                     }
                   },
@@ -105,7 +93,8 @@ class SessionWrapper extends StatelessWidget {
             },
           );
         } else {
-          return const ConnexionPage();
+          // L'utilisateur non connecté arrive sur l'écran d'accueil
+          return const WelcomeScreen();
         }
       },
     );

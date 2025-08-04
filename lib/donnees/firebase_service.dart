@@ -194,4 +194,43 @@ class FirebaseService {
     });
     await batch.commit();
   }
+
+  Future<List<Map<String, dynamic>>> getTousLesUtilisateurs() async {
+    final snapshot = await _db.collection('utilisateurs').get();
+    return snapshot.docs.map((doc) => doc.data()).toList();
+  }
+
+  Future<void> updateUserRole(String uid, String nouveauRole) async {
+    await _db.collection('utilisateurs').doc(uid).update({'role': nouveauRole});
+  }
+
+  Future<void> deleteUserDocument(String uid) async {
+    await _db.collection('utilisateurs').doc(uid).delete();
+  }
+
+  Stream<QuerySnapshot> getDeclarationsEnAttenteStream() {
+    return _db
+        .collectionGroup('declarations_finalisees')
+        .where('statut', isEqualTo: 'EN_ATTENTE')
+        .snapshots();
+  }
+
+  Future<void> updateDeclarationStatus(
+    String employeurUid,
+    String periode,
+    StatutDeclaration nouveauStatut, {
+    String? motifRejet,
+  }) async {
+    final dataToUpdate = {'statut': nouveauStatut.toString().split('.').last};
+    if (motifRejet != null) {
+      dataToUpdate['motifRejet'] = motifRejet;
+    }
+
+    await _db
+        .collection('utilisateurs')
+        .doc(employeurUid)
+        .collection('declarations_finalisees')
+        .doc(periode)
+        .update(dataToUpdate);
+  }
 }
