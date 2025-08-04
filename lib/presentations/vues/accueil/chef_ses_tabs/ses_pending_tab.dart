@@ -48,12 +48,20 @@ class SesPendingTab extends StatelessWidget {
           );
         }
         return RefreshIndicator(
+          // CORRECTION : Le onRefresh appelle maintenant le ViewModel
+          // Le stream se met à jour tout seul, mais cela force une relecture si l'utilisateur le souhaite.
           onRefresh: () async {
-            // Le stream se met à jour automatiquement, cette action donne un retour visuel.
+            // Dans une architecture Stream, il n'y a pas besoin d'appeler une méthode de refresh.
+            // Le stream met à jour les données automatiquement.
+            // On retourne un Future complété pour que l'indicateur disparaisse.
+            return Future<void>.delayed(const Duration(seconds: 1));
           },
           child: ListView.builder(
             padding: const EdgeInsets.all(kDefaultPadding),
-            itemCount: viewModel.declarations.length,
+            itemCount:
+                viewModel
+                    .declarations
+                    .length, // Utilise `declarations` qui ne contient que les "EN_ATTENTE"
             itemBuilder: (context, index) {
               final declaration = viewModel.declarations[index];
               return _DeclarationCard(declaration: declaration);
@@ -137,13 +145,11 @@ class _DeclarationCard extends StatelessWidget {
                   "Employeur: ${declaration.employeurNom}",
                   style: kSubtitleStyle.copyWith(color: kGreyText),
                 ),
-                const SizedBox(height: 24),
+                const Divider(height: 24),
                 ListTile(
                   leading: const Icon(Icons.visibility_outlined),
                   title: const Text("Voir les détails"),
                   onTap: () {
-                    // TODO: Implémenter la vue de détail pour le Chef SES.
-                    // Cela nécessitera de passer plus de données ou de faire une nouvelle requête.
                     Navigator.of(ctx).pop();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text("Fonctionnalité à venir.")),

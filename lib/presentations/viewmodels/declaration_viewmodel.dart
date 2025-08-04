@@ -98,9 +98,17 @@ class DeclarationViewModel extends ChangeNotifier {
   List<DeclarationTravailleurModele> get lignesBrouillon =>
       brouillonActuel.values.toList();
   bool get peutDeclarer => !isLoading && erreurMessage == null;
+  bool get isBrouillonEditable => statut != StatutEmployeur.A_JOUR;
 
   StatutEmployeur get statut {
     if (periodeActuelle == null) return StatutEmployeur.INDETERMINE;
+
+    // Si la dernière déclaration a été rejetée, le statut est "en retard" jusqu'à correction.
+    if (declarationsRecentes.isNotEmpty &&
+        declarationsRecentes.first.statut == StatutDeclaration.REJETEE) {
+      return StatutEmployeur.EN_RETARD;
+    }
+
     final now = DateTime.now();
     final moisDeReference = DateTime(now.year, now.month - 1);
     if (periodeActuelle!.isBefore(moisDeReference))
@@ -117,26 +125,35 @@ class DeclarationViewModel extends ChangeNotifier {
     erreurMessage = null;
     notifyListeners();
     try {
-      final donneesEmployeur = await _firebase.getDonneesUtilisateur(uid);
-      final ts = donneesEmployeur?['dernierePeriodeDeclaree'] as Timestamp?;
-      final dernierePeriodeDeclaree = ts?.toDate();
-      periodeActuelle =
-          (dernierePeriodeDeclaree == null)
-              ? DateTime(DateTime.now().year, DateTime.now().month - 1)
-              : DateTime(
-                dernierePeriodeDeclaree.year,
-                dernierePeriodeDeclaree.month + 1,
-              );
+      await chargerDeclarationsRecentes();
+      final derniereDeclaration =
+          declarationsRecentes.isNotEmpty ? declarationsRecentes.first : null;
+
+      if (derniereDeclaration != null &&
+          derniereDeclaration.statut == StatutDeclaration.REJETEE) {
+        final dateParts = derniereDeclaration.periode.split('-');
+        periodeActuelle = DateTime(
+          int.parse(dateParts[0]),
+          int.parse(dateParts[1]),
+        );
+      } else {
+        final donneesEmployeur = await _firebase.getDonneesUtilisateur(uid);
+        final ts = donneesEmployeur?['dernierePeriodeDeclaree'] as Timestamp?;
+        final dernierePeriodeDeclaree = ts?.toDate();
+        periodeActuelle =
+            (dernierePeriodeDeclaree == null)
+                ? DateTime(DateTime.now().year, DateTime.now().month - 1)
+                : DateTime(
+                  dernierePeriodeDeclaree.year,
+                  dernierePeriodeDeclaree.month + 1,
+                );
+      }
 
       tousLesTravailleurs =
           (await _firebase.getTousLesTravailleurs(
             uid,
           )).map((data) => TravailleurModele.fromMap(data)).toList();
-
-      await Future.wait([
-        chargerDeclarationsRecentes(),
-        chargerBrouillon(notify: false),
-      ]);
+      await chargerBrouillon(notify: false);
     } catch (e) {
       erreurMessage = e.toString();
     } finally {
@@ -149,7 +166,6 @@ class DeclarationViewModel extends ChangeNotifier {
     final data = await _firebase.getDeclarationsRecentes(uid);
     declarationsRecentes =
         data.map((d) => RapportDeclaration.fromMap(d)).toList();
-    notifyListeners();
   }
 
   Future<void> chargerHistoriqueComplet() async {
@@ -233,12 +249,13 @@ class DeclarationViewModel extends ChangeNotifier {
           brouillonActuel.values
               .where((ligne) => ligne.salaireBrut > 0)
               .toList();
-      if (lignesValides.isEmpty) {
+      if (lignesValides.isEmpty)
         throw Exception(
           "Veuillez renseigner le salaire pour au moins un employé.",
         );
-      }
+
       final rapport = _calculerRapportFinal(lignesValides);
+
       await _firebase.finaliserDeclarationEnLigne(
         uid,
         rapport.periode,
@@ -284,7 +301,7 @@ class DeclarationViewModel extends ChangeNotifier {
       cotisationRisquePro: cotisationRisquePro,
       cotisationFamille: cotisationFamille,
       totalDesCotisations: totalDesCotisations,
-      motifRejet: null, // Le motif est nul lors de la création
+      motifRejet: null,
     );
   }
 }

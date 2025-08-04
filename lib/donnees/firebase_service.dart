@@ -24,13 +24,14 @@ class FirebaseService {
     );
     final user = cred.user;
     if (user != null) {
-      // Mettre à jour le nom d'affichage dans Firebase Auth
       await user.updateDisplayName(nom);
-      // Créer le document dans Firestore
       await _db.collection('utilisateurs').doc(user.uid).set({
-        'uid': user.uid, 'email': email, 'nom': nom, 'role': role,
+        'uid': user.uid,
+        'email': email,
+        'nom': nom,
+        'role': role,
         'dernierePeriodeDeclaree': null,
-        'numAffiliation': '', // Ajout du champ affiliation
+        'numAffiliation': '',
       });
     }
     return user;
@@ -215,6 +216,13 @@ class FirebaseService {
         .snapshots();
   }
 
+  Stream<QuerySnapshot> getToutesLesDeclarationsFinaliseesStream() {
+    return _db
+        .collectionGroup('declarations_finalisees')
+        .orderBy('dateFinalisation', descending: true)
+        .snapshots();
+  }
+
   Future<void> updateDeclarationStatus(
     String employeurUid,
     String periode,
@@ -222,15 +230,38 @@ class FirebaseService {
     String? motifRejet,
   }) async {
     final dataToUpdate = {'statut': nouveauStatut.toString().split('.').last};
-    if (motifRejet != null) {
-      dataToUpdate['motifRejet'] = motifRejet;
-    }
-
+    if (motifRejet != null) dataToUpdate['motifRejet'] = motifRejet;
     await _db
         .collection('utilisateurs')
         .doc(employeurUid)
         .collection('declarations_finalisees')
         .doc(periode)
         .update(dataToUpdate);
+  }
+
+  Future<List<Map<String, dynamic>>>
+  getToutesLesDeclarationsAvecEmployeur() async {
+    final declarationsSnapshot =
+        await _db.collectionGroup('declarations_finalisees').get();
+    List<Map<String, dynamic>> results = [];
+    await Future.forEach(declarationsSnapshot.docs, (declaDoc) async {
+      var data = declaDoc.data();
+      final employeurUid = declaDoc.reference.parent.parent!.id;
+      final employeurDoc =
+          await _db.collection('utilisateurs').doc(employeurUid).get();
+      if (employeurDoc.exists) {
+        data['employeurNom'] = employeurDoc.data()?['nom'];
+        data['employeurUid'] = employeurUid;
+      }
+      results.add(data);
+    });
+    results.sort((a, b) {
+      final dateA =
+          (a['dateFinalisation'] as Timestamp?)?.toDate() ?? DateTime(1970);
+      final dateB =
+          (b['dateFinalisation'] as Timestamp?)?.toDate() ?? DateTime(1970);
+      return dateB.compareTo(dateA);
+    });
+    return results;
   }
 }

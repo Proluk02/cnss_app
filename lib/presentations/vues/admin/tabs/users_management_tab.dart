@@ -1,6 +1,7 @@
 // lib/presentations/vues/admin/tabs/users_management_tab.dart
 
 import 'package:cnss_app/core/constantes.dart';
+import 'package:cnss_app/donnees/modeles/utilisateur_modele.dart';
 import 'package:cnss_app/presentations/vues/admin/tabs/user_detail_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -49,20 +50,24 @@ class _UsersManagementTabState extends State<UsersManagementTab> {
                 return const Center(child: Text("Aucun utilisateur trouvé."));
               }
 
+              // Conversion en UtilisateurModele dès le début
               var utilisateurs =
                   snapshot.data!.docs
-                      .where((doc) => doc.id != _currentAdminId)
+                      .map(
+                        (doc) => UtilisateurModele.fromMap(
+                          doc.data() as Map<String, dynamic>,
+                        ),
+                      )
+                      .where((user) => user.uid != _currentAdminId)
                       .toList();
 
               if (_searchQuery.isNotEmpty) {
                 utilisateurs =
-                    utilisateurs.where((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
-                      final nom = (data['nom'] as String? ?? '').toLowerCase();
-                      final email =
-                          (data['email'] as String? ?? '').toLowerCase();
-                      return nom.contains(_searchQuery.toLowerCase()) ||
-                          email.contains(_searchQuery.toLowerCase());
+                    utilisateurs.where((user) {
+                      final query = _searchQuery.toLowerCase();
+                      final nom = user.nom?.toLowerCase() ?? '';
+                      final email = user.email?.toLowerCase() ?? '';
+                      return nom.contains(query) || email.contains(query);
                     }).toList();
               }
 
@@ -83,7 +88,8 @@ class _UsersManagementTabState extends State<UsersManagementTab> {
                 ),
                 itemCount: utilisateurs.length,
                 itemBuilder: (context, index) {
-                  return _UserCard(userDoc: utilisateurs[index]);
+                  // On passe directement l'objet UtilisateurModele
+                  return _UserCard(user: utilisateurs[index]);
                 },
               );
             },
@@ -95,8 +101,8 @@ class _UsersManagementTabState extends State<UsersManagementTab> {
 }
 
 class _UserCard extends StatelessWidget {
-  final QueryDocumentSnapshot userDoc;
-  const _UserCard({required this.userDoc});
+  final UtilisateurModele user;
+  const _UserCard({required this.user});
 
   void _modifierRole(String uid, String nouveauRole) {
     FirebaseFirestore.instance.collection('utilisateurs').doc(uid).update({
@@ -125,38 +131,48 @@ class _UserCard extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: Text("Changer le rôle de $nom"),
-          content: DropdownButton<String>(
-            value: selectedRole,
-            isExpanded: true,
-            items:
-                roles
-                    .map(
-                      (role) =>
-                          DropdownMenuItem(value: role, child: Text(role)),
-                    )
-                    .toList(),
-            onChanged: (value) {
-              if (value != null) selectedRole = value;
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text("Annuler"),
-            ),
-            FilledButton(
-              onPressed: () {
-                _modifierRole(uid, selectedRole);
-                Navigator.of(ctx).pop();
+      builder:
+          (ctx) => AlertDialog(
+            title: Text("Changer le rôle de $nom"),
+            content: StatefulBuilder(
+              // Utiliser StatefulBuilder pour que le Dropdown se mette à jour visuellement
+              builder: (BuildContext context, StateSetter setState) {
+                return DropdownButton<String>(
+                  value: selectedRole,
+                  isExpanded: true,
+                  items:
+                      roles
+                          .map(
+                            (role) => DropdownMenuItem(
+                              value: role,
+                              child: Text(role),
+                            ),
+                          )
+                          .toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        selectedRole = value;
+                      });
+                    }
+                  },
+                );
               },
-              child: const Text("Valider"),
             ),
-          ],
-        );
-      },
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text("Annuler"),
+              ),
+              FilledButton(
+                onPressed: () {
+                  _modifierRole(uid, selectedRole);
+                  Navigator.of(ctx).pop();
+                },
+                child: const Text("Valider"),
+              ),
+            ],
+          ),
     );
   }
 
@@ -189,12 +205,6 @@ class _UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final uid = userDoc.id;
-    final data = userDoc.data() as Map<String, dynamic>;
-    final nom = data['nom'] as String? ?? 'N/A';
-    final email = data['email'] as String? ?? 'N/A';
-    final roleActuel = data['role'] as String? ?? 'N/A';
-
     return Card(
       elevation: 2,
       shadowColor: Colors.black12,
@@ -204,20 +214,24 @@ class _UserCard extends StatelessWidget {
       ),
       child: ListTile(
         onTap: () {
+          // On passe l'objet UtilisateurModele directement, ce qui est plus propre
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) => UserDetailScreen(userDoc: userDoc),
-            ),
+            MaterialPageRoute(builder: (_) => UserDetailScreen(user: user)),
           );
         },
         leading: CircleAvatar(
           backgroundColor: kPrimaryColor.withOpacity(0.1),
           foregroundColor: kPrimaryColor,
-          child: Text(nom.isNotEmpty ? nom[0].toUpperCase() : '?'),
+          child: Text(
+            user.nom?.isNotEmpty == true ? user.nom![0].toUpperCase() : '?',
+          ),
         ),
-        title: Text(nom, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(email),
+        title: Text(
+          user.nom ?? "Nom non défini",
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(user.email ?? "Email non défini"),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -228,7 +242,7 @@ class _UserCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                roleActuel,
+                user.role ?? 'N/A',
                 style: const TextStyle(
                   color: kAccentColor,
                   fontWeight: FontWeight.bold,
@@ -239,9 +253,14 @@ class _UserCard extends StatelessWidget {
             PopupMenuButton<String>(
               onSelected: (value) {
                 if (value == 'edit')
-                  _showChangeRoleDialog(context, uid, nom, roleActuel);
+                  _showChangeRoleDialog(
+                    context,
+                    user.uid,
+                    user.nom ?? '',
+                    user.role ?? '',
+                  );
                 else if (value == 'delete')
-                  _confirmDelete(context, uid, nom);
+                  _confirmDelete(context, user.uid, user.nom ?? '');
               },
               itemBuilder:
                   (context) => [

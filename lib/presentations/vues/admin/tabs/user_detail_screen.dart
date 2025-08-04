@@ -2,24 +2,19 @@
 
 import 'package:cnss_app/core/constantes.dart';
 import 'package:cnss_app/donnees/modeles/utilisateur_modele.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class UserDetailScreen extends StatelessWidget {
-  final QueryDocumentSnapshot userDoc;
-  const UserDetailScreen({super.key, required this.userDoc});
+  final UtilisateurModele user;
+  const UserDetailScreen({super.key, required this.user});
 
   @override
   Widget build(BuildContext context) {
-    final user = UtilisateurModele.fromMap(
-      userDoc.data() as Map<String, dynamic>,
-    );
-
     return Scaffold(
       backgroundColor: kBackgroundColor,
       appBar: AppBar(
-        title: Text(user.nom),
+        title: Text(user.nom ?? "Détails de l'utilisateur"),
         flexibleSpace: Container(
           decoration: const BoxDecoration(gradient: kAppBarGradient),
         ),
@@ -32,18 +27,21 @@ class UserDetailScreen extends StatelessWidget {
               radius: 50,
               backgroundColor: kPrimaryColor.withOpacity(0.1),
               child: Text(
-                user.nom.isNotEmpty == true ? user.nom[0].toUpperCase() : '?',
+                user.nom?.isNotEmpty == true ? user.nom![0].toUpperCase() : '?',
                 style: const TextStyle(fontSize: 40, color: kPrimaryColor),
               ),
             ),
           ),
           const SizedBox(height: 16),
           Center(
-            child: Text(user.nom, style: kTitleStyle.copyWith(fontSize: 24)),
+            child: Text(
+              user.nom ?? 'Nom non défini',
+              style: kTitleStyle.copyWith(fontSize: 24),
+            ),
           ),
           Center(
             child: Text(
-              user.email,
+              user.email ?? 'Email non défini',
               style: kSubtitleStyle.copyWith(color: kGreyText),
             ),
           ),
@@ -61,16 +59,16 @@ class UserDetailScreen extends StatelessWidget {
                     context,
                     icon: Icons.shield_outlined,
                     label: "Rôle",
-                    value: user.role,
+                    value: user.role ?? 'N/A',
                   ),
                   _buildDetailRow(
                     context,
                     icon: Icons.confirmation_number_outlined,
                     label: "Numéro d'Affiliation",
                     value:
-                        user.numAffiliation?.isEmpty ?? true
-                            ? 'Non renseigné'
-                            : user.numAffiliation!,
+                        user.numAffiliation?.isNotEmpty ?? false
+                            ? user.numAffiliation!
+                            : 'Non renseigné',
                   ),
                   _buildDetailRow(
                     context,
@@ -100,12 +98,17 @@ class UserDetailScreen extends StatelessWidget {
       title: Text(label, style: kLabelStyle),
       subtitle: Text(
         value,
-        style: kSubtitleStyle.copyWith(color: kDarkText, fontSize: 16),
+        style: kSubtitleStyle.copyWith(
+          color: kDarkText,
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       trailing:
           isCopiable
               ? IconButton(
                 icon: const Icon(Icons.copy_outlined, size: 20),
+                tooltip: "Copier l'UID",
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: value));
                   ScaffoldMessenger.of(context).showSnackBar(

@@ -95,9 +95,9 @@ class _ChefSESDashboardState extends State<ChefSESDashboard> {
                   child: Image.asset('assets/images/logo_cnss.png', height: 48),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  "Chef de Centre",
-                  style: TextStyle(
+                Text(
+                  currentUser?.displayName ?? "Chef de Centre",
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -105,7 +105,7 @@ class _ChefSESDashboardState extends State<ChefSESDashboard> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  currentUser?.email ?? "chefs_ses@cnss.app",
+                  currentUser?.email ?? "chef.ses@cnss.app",
                   style: const TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               ],
