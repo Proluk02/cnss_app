@@ -1,12 +1,9 @@
 // lib/presentations/vues/accueil/prepose_tabs/prepose_search_tab.dart
-// (Assurez-vous que ce fichier est bien appelé par `prepose_dashboard.dart`)
 
 import 'package:cnss_app/core/constantes.dart';
-import 'package:cnss_app/donnees/modeles/utilisateur_modele.dart';
 import 'package:cnss_app/presentations/viewmodels/prepose_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import 'fiche_compte_screen.dart';
 
 class PreposeSearchTab extends StatefulWidget {
@@ -17,97 +14,115 @@ class PreposeSearchTab extends StatefulWidget {
 }
 
 class _PreposeSearchTabState extends State<PreposeSearchTab> {
-  String _searchQuery = '';
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<PreposeViewModel>(
-      builder: (context, viewModel, child) {
-        final List<UtilisateurModele> filteredList;
-        if (_searchQuery.isEmpty) {
-          filteredList = viewModel.tousLesEmployeurs;
-        } else {
-          filteredList = viewModel.tousLesEmployeurs.where((user) {
-            final query = _searchQuery.toLowerCase();
-            final nom = user.nom?.toLowerCase() ?? '';
-            final affiliation = user.numAffiliation?.toLowerCase() ?? '';
-            return nom.contains(query) || affiliation.contains(query);
-          }).toList();
-        }
+    final viewModel = context.watch<PreposeViewModel>();
 
-        return Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(kDefaultPadding),
-              child: TextField(
-                onChanged: (value) => setState(() => _searchQuery = value),
-                decoration: const InputDecoration(
-                  hintText: "Rechercher un employeur...",
-                  prefixIcon: Icon(Icons.search),
-                  border: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.all(Radius.circular(kButtonRadius))),
-                ),
+    // Le PreposeViewModel doit être disponible pour être passé à la route suivante
+    final preposeVMProvider = context.read<PreposeViewModel>();
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(kDefaultPadding),
+          child: TextField(
+            controller: _searchController,
+            onChanged: (value) {
+              // On appelle la méthode de recherche du ViewModel
+              viewModel.rechercherEmployeurs(value);
+            },
+            decoration: const InputDecoration(
+              hintText: "Rechercher un employeur...",
+              prefixIcon: Icon(Icons.search),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(kButtonRadius)),
               ),
             ),
-            Expanded(
-              child: _buildResults(context, viewModel, filteredList),
-            ),
-          ],
-        );
-      },
+          ),
+        ),
+        Expanded(
+          child: _buildResults(viewModel, preposeVMProvider),
+        ),
+      ],
     );
   }
 
-  Widget _buildResults(BuildContext context, PreposeViewModel viewModel,
-      List<UtilisateurModele> employeurs) {
-    if (viewModel.isLoading) {
+  Widget _buildResults(
+      PreposeViewModel viewModel, PreposeViewModel preposeVMProvider) {
+    if (viewModel.isSearching) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (viewModel.errorMessage != null) {
-      return Center(child: Text(viewModel.errorMessage!));
+    if (viewModel.searchErrorMessage != null) {
+      return Center(
+        child: Padding(
+            padding: const EdgeInsets.all(kDefaultPadding),
+            child: Text(viewModel.searchErrorMessage!,
+                textAlign: TextAlign.center)),
+      );
     }
-    if (viewModel.tousLesEmployeurs.isEmpty) {
+    if (_searchController.text.length < 3) {
       return const Center(
-          child: Text("Aucun employeur n'a été trouvé dans le système."));
+        child: Padding(
+          padding: EdgeInsets.all(kDefaultPadding),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.search_off, size: 80, color: kGreyText),
+              SizedBox(height: 16),
+              Text("Entrez au moins 3 caractères pour lancer la recherche.",
+                  textAlign: TextAlign.center),
+            ],
+          ),
+        ),
+      );
     }
-    if (employeurs.isEmpty && _searchQuery.isNotEmpty) {
+    if (viewModel.searchResults.isEmpty) {
       return const Center(
-          child: Text("Aucun employeur ne correspond à votre recherche."));
+          child: Text("Aucun employeur trouvé pour cette recherche."));
     }
 
-    return RefreshIndicator(
-      onRefresh: () => viewModel.chargerTousLesEmployeurs(),
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: kDefaultPadding),
-        itemCount: employeurs.length,
-        itemBuilder: (context, index) {
-          final user = employeurs[index];
-          return Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(kCardRadius)),
-            child: ListTile(
-              leading: const CircleAvatar(child: Icon(Icons.business_center)),
-              title: Text(user.nom ?? 'N/A',
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text(
-                  "N° Affiliation: ${user.numAffiliation?.isNotEmpty ?? false ? user.numAffiliation! : 'N/A'}"),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: kDefaultPadding),
+      itemCount: viewModel.searchResults.length,
+      itemBuilder: (context, index) {
+        final user = viewModel.searchResults[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(kCardRadius)),
+          child: ListTile(
+            leading: const CircleAvatar(child: Icon(Icons.business_center)),
+            title: Text(user.nom ?? 'N/A',
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text(
+                "N° Affiliation: ${user.numAffiliation?.isNotEmpty ?? false ? user.numAffiliation! : 'N/A'}"),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () {
+              // Si la page peut retourner une valeur (cas de la sélection pour un rapport)
+              if (Navigator.canPop(context)) {
+                Navigator.of(context).pop(user);
+              } else {
+                // Sinon, on navigue vers la fiche de compte (cas de l'onglet du Préposé)
                 Navigator.push(
                     context,
                     MaterialPageRoute(
                         builder: (_) => ChangeNotifierProvider.value(
-                              value:
-                                  viewModel, // On passe le ViewModel existant
+                              value: preposeVMProvider,
                               child: FicheCompteScreen(employeur: user),
                             )));
-              },
-            ),
-          );
-        },
-      ),
+              }
+            },
+          ),
+        );
+      },
     );
   }
 }

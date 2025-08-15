@@ -8,16 +8,15 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
-
-// NOUVEAUX IMPORTS NÉCESSAIRES POUR LA LOCALISATION
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:month_year_picker/month_year_picker.dart'; // Import pour le nouveau package
 
 import 'donnees/firebase_service.dart';
 import 'firebase_options.dart';
 import 'presentations/vues/accueil/splash_screen.dart';
 import 'presentations/vues/accueil/welcome_screen.dart';
 import 'presentations/vues/admin/admin_dashboard.dart';
-import 'presentations/vues/authentification/connexion.dart'; // Assurez-vous que cet import est là si ConnexionPage est utilisée
+import 'presentations/vues/authentification/connexion.dart';
 import 'presentations/vues/tableau_bord.dart';
 
 Future<void> main() async {
@@ -39,24 +38,20 @@ class CNSSApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: ThemeData(primarySwatch: Colors.blue),
 
-        // --- CORRECTION AJOUTÉE ICI ---
+        // --- CORRECTION ET AJOUT ICI ---
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
+          MonthYearPickerLocalizations
+              .delegate, // Ajout du délégué pour le sélecteur de mois
         ],
         supportedLocales: const [
-          Locale(
-            'fr',
-            'FR',
-          ), // Définir le français comme langue supportée par défaut
+          Locale('fr', 'FR'), // Assurez-vous que le français est supporté
         ],
-        locale: const Locale(
-          'fr',
-          'FR',
-        ), // Forcer l'application à utiliser le français
-
+        locale: const Locale('fr', 'FR'),
         // --- FIN DE LA CORRECTION ---
+
         home: const SessionWrapper(),
       ),
     );
@@ -74,7 +69,6 @@ class SessionWrapper extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const SplashScreen();
         }
-
         if (snapshot.hasData) {
           final user = snapshot.data!;
           return FutureBuilder<String?>(
@@ -83,16 +77,13 @@ class SessionWrapper extends StatelessWidget {
               if (roleSnapshot.connectionState == ConnectionState.waiting) {
                 return const SplashScreen();
               }
-
               final role = roleSnapshot.data;
               return MultiProvider(
                 providers: [
                   ChangeNotifierProvider(
-                    create: (_) => TravailleurViewModel(uid: user.uid),
-                  ),
+                      create: (_) => TravailleurViewModel(uid: user.uid)),
                   ChangeNotifierProvider(
-                    create: (_) => DeclarationViewModel(uid: user.uid),
-                  ),
+                      create: (_) => DeclarationViewModel(uid: user.uid)),
                 ],
                 child: Builder(
                   builder: (context) {

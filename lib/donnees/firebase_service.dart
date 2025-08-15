@@ -326,4 +326,11 @@ class FirebaseService {
       return data;
     }).toList();
   }
+
+  Stream<QuerySnapshot> getTousLesEmployeursStream() {
+    return _db
+        .collection('utilisateurs')
+        .where('role', isEqualTo: 'employeur')
+        .snapshots();
+  }
 }

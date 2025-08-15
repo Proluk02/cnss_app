@@ -507,4 +507,63 @@ class PdfService {
       },
     );
   }
+
+  Future<void> imprimerRapportGlobal({
+    required DateTime date,
+    required List<RapportJournalier> rapportsJournaliers,
+  }) async {
+    final doc = pw.Document();
+    final logoImage = pw.MemoryImage(
+        (await rootBundle.load('assets/images/logo_cnss.png'))
+            .buffer
+            .asUint8List());
+    final font = await PdfGoogleFonts.poppinsRegular();
+    final boldFont = await PdfGoogleFonts.poppinsBold();
+    final theme = pw.ThemeData.withFont(base: font, bold: boldFont);
+
+    doc.addPage(
+      pw.Page(
+        theme: theme,
+        pageFormat: PdfPageFormat.a4.landscape,
+        build: (context) => _buildEtatJournalierPage(
+            context, logoImage, date, rapportsJournaliers),
+      ),
+    );
+
+    await Printing.layoutPdf(onLayout: (format) async => doc.save());
+  }
+
+  Future<void> imprimerRapportMensuel({
+    required UtilisateurModele employeur,
+    required List<RapportDeclaration> rapports,
+    required String mois,
+  }) async {
+    final doc = pw.Document();
+    final logoImage = pw.MemoryImage(
+        (await rootBundle.load('assets/images/logo_cnss.png'))
+            .buffer
+            .asUint8List());
+    final font = await PdfGoogleFonts.poppinsRegular();
+    final boldFont = await PdfGoogleFonts.poppinsBold();
+    final theme = pw.ThemeData.withFont(base: font, bold: boldFont);
+
+    // On réutilise la logique de la Fiche de Compte, mais avec un titre différent
+    doc.addPage(
+      pw.MultiPage(
+        theme: theme,
+        pageFormat: PdfPageFormat.a4.landscape,
+        header: (context) => _buildHeader(logoImage, "RAPPORT MENSUEL - $mois"),
+        build: (context) => [
+          pw.SizedBox(height: 20),
+          _buildEmployeurInfo(
+              employeur.nom ?? 'N/A', employeur.numAffiliation ?? 'N/A'),
+          pw.SizedBox(height: 20),
+          _buildFicheTable(
+              rapports), // On réutilise le tableau de la fiche de compte
+        ],
+      ),
+    );
+
+    await Printing.layoutPdf(onLayout: (format) async => doc.save());
+  }
 }

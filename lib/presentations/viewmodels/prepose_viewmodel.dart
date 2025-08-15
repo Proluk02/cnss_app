@@ -8,17 +8,31 @@ import 'package:flutter/foundation.dart';
 class PreposeViewModel extends ChangeNotifier {
   final FirebaseService _firebase = FirebaseService();
 
+  // --- ÉTATS ---
+
+  // Pour le chargement initial de la liste complète
   bool _isLoading = false;
   String? _errorMessage;
   List<UtilisateurModele> _tousLesEmployeurs = [];
 
+  // Pour la recherche en temps réel
+  bool _isSearching = false;
+  String? _searchErrorMessage;
+  List<UtilisateurModele> _searchResults = [];
+
+  // Pour la fiche de compte
+  bool _isLoadingFiche = false;
+  String? _ficheErrorMessage;
+  List<RapportDeclaration> _ficheDeCompte = [];
+
+  // --- GETTERS ---
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   List<UtilisateurModele> get tousLesEmployeurs => _tousLesEmployeurs;
 
-  bool _isLoadingFiche = false;
-  String? _ficheErrorMessage;
-  List<RapportDeclaration> _ficheDeCompte = [];
+  bool get isSearching => _isSearching;
+  String? get searchErrorMessage => _searchErrorMessage;
+  List<UtilisateurModele> get searchResults => _searchResults;
 
   bool get isLoadingFiche => _isLoadingFiche;
   String? get ficheErrorMessage => _ficheErrorMessage;
@@ -28,6 +42,7 @@ class PreposeViewModel extends ChangeNotifier {
     chargerTousLesEmployeurs();
   }
 
+  /// Charge la liste complète de tous les employeurs une seule fois
   Future<void> chargerTousLesEmployeurs() async {
     _isLoading = true;
     _errorMessage = null;
@@ -35,25 +50,48 @@ class PreposeViewModel extends ChangeNotifier {
 
     try {
       final data = await _firebase.getTousLesEmployeurs();
-
       _tousLesEmployeurs =
           data.map((d) => UtilisateurModele.fromMap(d)).toList();
-
       if (_tousLesEmployeurs.isEmpty) {
-        _errorMessage =
-            "Aucun document avec role: 'employeur' n'a été trouvé. Vérifiez les données dans Firestore.";
+        _errorMessage = "Aucun employeur trouvé dans le système.";
       }
     } catch (e) {
       _errorMessage =
-          "Erreur de chargement des employeurs. Un index est probablement manquant sur Firestore (role ASC, nom_lower ASC).";
+          "Erreur de chargement des employeurs. Un index est probablement manquant.";
       _tousLesEmployeurs = [];
-      debugPrint("ERREUR PREPOSE VM: $e");
+      debugPrint("ERREUR PREPOSE VM (chargerTousLesEmployeurs): $e");
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
+  /// Recherche les employeurs dans Firestore en fonction d'une requête.
+  Future<void> rechercherEmployeurs(String query) async {
+    if (query.length < 3) {
+      _searchResults = [];
+      _searchErrorMessage = null;
+      notifyListeners();
+      return;
+    }
+
+    _isSearching = true;
+    _searchErrorMessage = null;
+    notifyListeners();
+
+    try {
+      final data = await _firebase.rechercherEmployeurs(query);
+      _searchResults = data.map((d) => UtilisateurModele.fromMap(d)).toList();
+    } catch (e) {
+      _searchErrorMessage = "Erreur de recherche : ${e.toString()}";
+      _searchResults = [];
+    } finally {
+      _isSearching = false;
+      notifyListeners();
+    }
+  }
+
+  /// Charge l'historique complet des déclarations pour un employeur spécifique.
   Future<void> chargerFicheDeCompte(String employeurUid) async {
     _isLoadingFiche = true;
     _ficheErrorMessage = null;

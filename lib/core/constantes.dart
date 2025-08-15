@@ -1,3 +1,5 @@
+// lib/core/constantes.dart
+
 import 'package:flutter/material.dart';
 
 // COULEURS PRINCIPALES
@@ -42,19 +44,19 @@ const Color kLineChartColor = Color(0xFF1565C0);
 const Duration kAnimationFast = Duration(milliseconds: 200);
 
 // EXEMPLE DE THEME POUR TEXT (à utiliser dans vos TextStyle)
-TextStyle kTitleStyle = const TextStyle(
+const TextStyle kTitleStyle = TextStyle(
   fontSize: kFontSizeTitle,
   fontWeight: FontWeight.bold,
   color: kPrimaryColor,
 );
 
-TextStyle kSubtitleStyle = const TextStyle(
+const TextStyle kSubtitleStyle = TextStyle(
   fontSize: kFontSizeSubtitle,
   fontWeight: FontWeight.w500,
   color: Colors.black87,
 );
 
-TextStyle kLabelStyle = const TextStyle(
+const TextStyle kLabelStyle = TextStyle(
   fontSize: kFontSizeLabel,
   color: kGreyText,
 );
