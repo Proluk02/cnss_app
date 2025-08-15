@@ -55,14 +55,12 @@ class TravailleurViewModel extends ChangeNotifier {
         prenoms: data['prenoms'],
         typeTravailleur: data['typeTravailleur'],
         communeAffectation: data['communeAffectation'],
-        enfantsBeneficiaires: 0,
+        enfantsBeneficiaires: 0, // Initialisé à 0
         lastModified: DateTime.now(),
       );
       await _firebase.syncTravailleur(uid, nouveauTravailleur.toMap());
       _travailleurs.add(nouveauTravailleur);
-      _travailleurs.sort(
-        (a, b) => a.nom.compareTo(b.nom),
-      ); // Garder la liste triée
+      _travailleurs.sort((a, b) => a.nom.compareTo(b.nom));
     } catch (e) {
       throw Exception("L'ajout a échoué : ${e.toString()}");
     } finally {
@@ -96,9 +94,7 @@ class TravailleurViewModel extends ChangeNotifier {
       );
       await _firebase.syncTravailleur(uid, travailleurMisAJour.toMap());
       _travailleurs[index] = travailleurMisAJour;
-      _travailleurs.sort(
-        (a, b) => a.nom.compareTo(b.nom),
-      ); // Garder la liste triée
+      _travailleurs.sort((a, b) => a.nom.compareTo(b.nom));
     } catch (e) {
       throw Exception("La mise à jour a échoué : ${e.toString()}");
     } finally {

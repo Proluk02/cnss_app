@@ -9,14 +9,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.35"
-  animated_notch_bottom_bar:
-    dependency: "direct main"
-    description:
-      name: animated_notch_bottom_bar
-      sha256: adc389a39e7b015883bba22de57e691eb6445c98c055b2438d6593a7f68017fe
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.3"
   archive:
     dependency: transitive
     description:
@@ -121,6 +113,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.6"
+  cupertino_icons:
+    dependency: "direct main"
+    description:
+      name: cupertino_icons
+      sha256: ba631d1c7f7bef6b729a622b7b752645a2d076dba9976925b8f25725a30e1ee6
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.8"
   dev_build:
     dependency: transitive
     description:
@@ -213,10 +213,10 @@ packages:
     dependency: "direct main"
     description:
       name: fl_chart
-      sha256: "577aeac8ca414c25333334d7c4bb246775234c0e44b38b10a82b559dd4d764e7"
+      sha256: d0f0d49112f2f4b192481c16d05b6418bd7820e021e265a3c22db98acf7ed7fb
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.0"
+    version: "0.68.0"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -226,10 +226,15 @@ packages:
     dependency: "direct dev"
     description:
       name: flutter_lints
-      sha256: "5398f14efa795ffb7a33e9b6a08798b26a180edac4ad7db3f231e40f82ce11e1"
+      sha256: "9e8c3858111da373efc5aa341de011d9bd23e2c5c5e0c62bccf32438e192d7b1"
       url: "https://pub.dev"
     source: hosted
-    version: "5.0.0"
+    version: "3.0.2"
+  flutter_localizations:
+    dependency: "direct main"
+    description: flutter
+    source: sdk
+    version: "0.0.0"
   flutter_riverpod:
     dependency: "direct main"
     description:
@@ -284,10 +289,10 @@ packages:
     dependency: "direct main"
     description:
       name: intl
-      sha256: "3df61194eb431efc39c4ceba583b95633a403f46c9fd341e550ce0bfa50e9aa5"
+      sha256: d6f56758b7d3014a48af9701c085700aac781a92a87a62b1333b46d8879661cf
       url: "https://pub.dev"
     source: hosted
-    version: "0.20.2"
+    version: "0.19.0"
   leak_tracker:
     dependency: transitive
     description:
@@ -316,10 +321,10 @@ packages:
     dependency: transitive
     description:
       name: lints
-      sha256: c35bb79562d980e9a453fc715854e1ed39e24e7d0297a880ef54e17f9874a9d7
+      sha256: cbf8d4b858bb0134ef3ef87841abdf8d63bfc255c266b7bf6b39daa1085c4290
       url: "https://pub.dev"
     source: hosted
-    version: "5.1.1"
+    version: "3.0.0"
   matcher:
     dependency: transitive
     description:
@@ -526,7 +531,7 @@ packages:
     source: hosted
     version: "2.3.5"
   sqflite_common_ffi_web:
-    dependency: "direct main"
+    dependency: "direct dev"
     description:
       name: sqflite_common_ffi_web
       sha256: cfc9d1c61a3e06e5b2e96994a44b11125b4f451fee95b9fad8bd473b4613d592
@@ -670,5 +675,5 @@ packages:
     source: hosted
     version: "3.1.3"
 sdks:
-  dart: ">=3.7.2 <4.0.0"
-  flutter: ">=3.27.4"
+  dart: ">=3.7.0 <4.0.0"
+  flutter: ">=3.24.0"

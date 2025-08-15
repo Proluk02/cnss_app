@@ -9,11 +9,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
+// NOUVEAUX IMPORTS NÉCESSAIRES POUR LA LOCALISATION
+import 'package:flutter_localizations/flutter_localizations.dart';
+
 import 'donnees/firebase_service.dart';
 import 'firebase_options.dart';
 import 'presentations/vues/accueil/splash_screen.dart';
 import 'presentations/vues/accueil/welcome_screen.dart';
-import 'presentations/vues/admin/admin_dashboard.dart'; // MISE À JOUR
+import 'presentations/vues/admin/admin_dashboard.dart';
+import 'presentations/vues/authentification/connexion.dart'; // Assurez-vous que cet import est là si ConnexionPage est utilisée
 import 'presentations/vues/tableau_bord.dart';
 
 Future<void> main() async {
@@ -34,7 +38,25 @@ class CNSSApp extends StatelessWidget {
         title: 'CnssApp',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(primarySwatch: Colors.blue),
-        // CORRECTION : onGenerateRoute est supprimé. 'home' gère tout.
+
+        // --- CORRECTION AJOUTÉE ICI ---
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale(
+            'fr',
+            'FR',
+          ), // Définir le français comme langue supportée par défaut
+        ],
+        locale: const Locale(
+          'fr',
+          'FR',
+        ), // Forcer l'application à utiliser le français
+
+        // --- FIN DE LA CORRECTION ---
         home: const SessionWrapper(),
       ),
     );
@@ -82,7 +104,6 @@ class SessionWrapper extends StatelessWidget {
                       case 'directeur':
                         return TableauBord(role: role!);
                       case 'administrateur':
-                        // MISE À JOUR : Affiche le nouveau dashboard de l'admin
                         return const AdminDashboard();
                       default:
                         return const WelcomeScreen();
@@ -93,7 +114,6 @@ class SessionWrapper extends StatelessWidget {
             },
           );
         } else {
-          // L'utilisateur non connecté arrive sur l'écran d'accueil
           return const WelcomeScreen();
         }
       },
