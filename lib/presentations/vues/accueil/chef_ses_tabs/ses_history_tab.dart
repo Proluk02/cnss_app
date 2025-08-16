@@ -24,6 +24,7 @@ class _SesHistoryTabState extends State<SesHistoryTab> {
       initialDate: _selectedDate ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      locale: const Locale('fr', 'FR'),
     );
     if (picked != null && picked != _selectedDate) {
       setState(() => _selectedDate = picked);
@@ -42,85 +43,71 @@ class _SesHistoryTabState extends State<SesHistoryTab> {
         }
         if (viewModel.historiqueComplet.isEmpty) {
           return const Center(
-            child: Text("Aucun historique de déclaration trouvé."),
-          );
+              child: Text("Aucun historique de déclaration trouvé."));
         }
 
         // --- Logique de Filtrage ---
         var filteredHistory = viewModel.historiqueComplet;
         if (_selectedDate != null) {
           final selectedPeriod = DateFormat('yyyy-MM').format(_selectedDate!);
-          filteredHistory =
-              filteredHistory
-                  .where((rapport) => rapport.periode == selectedPeriod)
-                  .toList();
+          filteredHistory = filteredHistory
+              .where((rapport) => rapport.periode == selectedPeriod)
+              .toList();
         }
-        // Pour un filtrage par nom, il faudrait enrichir `historiqueComplet` avec les noms des employeurs.
-        // Ce n'est pas le cas pour l'instant, donc la recherche textuelle est désactivée pour éviter la confusion.
+        // Pour le filtrage par nom, il faudrait enrichir `historiqueComplet` dans le ViewModel,
+        // ce qui est une optimisation future possible.
 
         return Column(
           children: [
             Container(
               padding: const EdgeInsets.all(kDefaultPadding),
               color: Colors.white,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: InkWell(
-                      onTap: () => _selectDate(context),
-                      child: InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: "Filtrer par période",
-                          prefixIcon: Icon(Icons.calendar_month_outlined),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(kButtonRadius),
-                            ),
-                          ),
-                        ),
-                        child: Text(
-                          _selectedDate == null
-                              ? 'Toutes les périodes'
-                              : DateFormat(
-                                'MMMM yyyy',
-                                'fr_FR',
-                              ).format(_selectedDate!),
-                          style: kSubtitleStyle.copyWith(
-                            color: kDarkText,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ),
+              child: InkWell(
+                onTap: () => _selectDate(context),
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: "Filtrer par période",
+                    prefixIcon: Icon(Icons.calendar_month_outlined),
+                    border: OutlineInputBorder(
+                        borderRadius:
+                            BorderRadius.all(Radius.circular(kButtonRadius))),
                   ),
-                  if (_selectedDate != null)
-                    IconButton(
-                      icon: const Icon(Icons.clear, color: kErrorColor),
-                      onPressed: () => setState(() => _selectedDate = null),
-                      tooltip: "Effacer le filtre",
-                    ),
-                ],
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _selectedDate == null
+                            ? 'Toutes les périodes'
+                            : DateFormat('MMMM yyyy', 'fr_FR')
+                                .format(_selectedDate!),
+                        style: kSubtitleStyle.copyWith(
+                            color: kDarkText, fontSize: 16),
+                      ),
+                      if (_selectedDate != null)
+                        IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () => setState(() => _selectedDate = null),
+                          tooltip: "Effacer le filtre",
+                        ),
+                    ],
+                  ),
+                ),
               ),
             ),
-
             Expanded(
               child: RefreshIndicator(
-                onRefresh: () async {
-                  /* Le stream gère le refresh */
-                },
-                child:
-                    filteredHistory.isEmpty
-                        ? const Center(
-                          child: Text("Aucun résultat pour cette période."),
-                        )
-                        : ListView.builder(
-                          padding: const EdgeInsets.all(kDefaultPadding),
-                          itemCount: filteredHistory.length,
-                          itemBuilder: (context, index) {
-                            final rapport = filteredHistory[index];
-                            return _HistoryItemCard(rapport: rapport);
-                          },
-                        ),
+                onRefresh: () async {/* Le stream gère le refresh */},
+                child: filteredHistory.isEmpty
+                    ? const Center(
+                        child: Text("Aucun résultat pour cette période."))
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(kDefaultPadding),
+                        itemCount: filteredHistory.length,
+                        itemBuilder: (context, index) {
+                          final rapport = filteredHistory[index];
+                          return _HistoryItemCard(rapport: rapport);
+                        },
+                      ),
               ),
             ),
           ],
@@ -136,47 +123,35 @@ class _HistoryItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final format = NumberFormat("#,##0", "fr_FR");
     return Card(
       elevation: 2,
       shadowColor: Colors.black12,
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(kCardRadius),
-      ),
+          borderRadius: BorderRadius.circular(kCardRadius)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "Période: ${rapport.periode}",
-                  style: kSubtitleStyle.copyWith(fontWeight: FontWeight.bold),
-                ),
-                _StatusBadge(status: rapport.statut),
-              ],
-            ),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Text("Période: ${rapport.periode}",
+                  style: kSubtitleStyle.copyWith(fontWeight: FontWeight.bold)),
+              _StatusBadge(status: rapport.statut),
+            ]),
             const Divider(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _InfoChip(
+            Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+              _InfoChip(
                   icon: Icons.receipt_long_outlined,
                   label: "Cotisations",
-                  value:
-                      "${NumberFormat("#,##0", "fr_FR").format(rapport.totalDesCotisations)} FC",
-                  color: kPrimaryColor,
-                ),
-                _InfoChip(
+                  value: "${format.format(rapport.totalDesCotisations)} FC",
+                  color: kPrimaryColor),
+              _InfoChip(
                   icon: Icons.people_outline,
                   label: "Employés",
                   value: rapport.nombreTravailleurs.toString(),
-                  color: Colors.orange.shade700,
-                ),
-              ],
-            ),
+                  color: Colors.orange.shade700),
+            ]),
           ],
         ),
       ),
@@ -211,17 +186,11 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(kButtonRadius),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
-      ),
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(kButtonRadius)),
+      child: Text(text,
+          style: TextStyle(
+              color: color, fontWeight: FontWeight.bold, fontSize: 12)),
     );
   }
 }
@@ -231,28 +200,20 @@ class _InfoChip extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
-  const _InfoChip({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
-  });
+  const _InfoChip(
+      {required this.icon,
+      required this.label,
+      required this.value,
+      required this.color});
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 24),
-        const SizedBox(height: 4),
-        Text(
-          value,
+    return Column(children: [
+      Icon(icon, color: color, size: 24),
+      const SizedBox(height: 4),
+      Text(value,
           style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-            color: color,
-          ),
-        ),
-        Text(label, style: kLabelStyle.copyWith(fontSize: 12)),
-      ],
-    );
+              fontWeight: FontWeight.bold, fontSize: 16, color: color)),
+      Text(label, style: kLabelStyle.copyWith(fontSize: 12)),
+    ]);
   }
 }

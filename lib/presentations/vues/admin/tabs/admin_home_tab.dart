@@ -36,15 +36,11 @@ class AdminHomeTab extends StatelessWidget {
                     ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
-
             if (userSnapshot.hasError || declarationSnapshot.hasError) {
               return Center(
-                child: Text(
-                  "Erreur de chargement: ${userSnapshot.error ?? declarationSnapshot.error}",
-                ),
-              );
+                  child: Text(
+                      "Erreur de chargement: ${userSnapshot.error ?? declarationSnapshot.error}"));
             }
-
             if (!userSnapshot.hasData || !declarationSnapshot.hasData) {
               return const Center(child: Text("Aucune donnée disponible."));
             }
@@ -67,35 +63,24 @@ class AdminHomeTab extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.all(kDefaultPadding),
                 children: [
-                  Text(
-                    _getGreeting(),
-                    style: kSubtitleStyle.copyWith(color: kGreyText),
-                  ),
-                  Text(
-                    adminName,
-                    style: kTitleStyle.copyWith(fontSize: 28, color: kDarkText),
-                  ),
+                  Text(_getGreeting(),
+                      style: kSubtitleStyle.copyWith(color: kGreyText)),
+                  Text(adminName,
+                      style:
+                          kTitleStyle.copyWith(fontSize: 28, color: kDarkText)),
                   const SizedBox(height: 24),
-
-                  Text(
-                    "Actions Rapides",
-                    style: kTitleStyle.copyWith(fontSize: 18),
-                  ),
+                  Text("Actions Rapides",
+                      style: kTitleStyle.copyWith(fontSize: 18)),
                   const SizedBox(height: 16),
-                  // CORRECTION : Le Row a été retiré, il ne reste qu'un seul ActionCard
                   _ActionCard(
                     icon: Icons.person_add_outlined,
                     label: "Créer un Utilisateur",
-                    onTap:
-                        () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const CreateUserScreen(),
-                          ),
-                        ),
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const CreateUserScreen())),
                   ),
                   const SizedBox(height: 24),
-
                   _StatCard(
                     title: "Utilisateurs Inscrits",
                     value: userCount.toString(),
@@ -112,32 +97,23 @@ class AdminHomeTab extends StatelessWidget {
                     isClickable: true,
                   ),
                   const SizedBox(height: 24),
-
-                  Text(
-                    "Répartition des Rôles",
-                    style: kTitleStyle.copyWith(fontSize: 18),
-                  ),
+                  Text("Répartition des Rôles",
+                      style: kTitleStyle.copyWith(fontSize: 18)),
                   const SizedBox(height: 16),
                   SizedBox(
-                    height: 200,
-                    child: _RolesPieChart(rolesCount: rolesCount),
-                  ),
+                      height: 200,
+                      child: _RolesPieChart(rolesCount: rolesCount)),
                   const SizedBox(height: 24),
-
-                  Text(
-                    "Derniers Utilisateurs Inscrits",
-                    style: kTitleStyle.copyWith(fontSize: 18),
-                  ),
+                  Text("Derniers Utilisateurs Inscrits",
+                      style: kTitleStyle.copyWith(fontSize: 18)),
                   const SizedBox(height: 16),
                   if (recentUsers.isEmpty)
                     const Center(child: Text("Aucun utilisateur récent."))
                   else
                     Column(
-                      children:
-                          recentUsers
-                              .map((doc) => _RecentUserTile(doc: doc))
-                              .toList(),
-                    ),
+                        children: recentUsers
+                            .map((doc) => _RecentUserTile(doc: doc))
+                            .toList()),
                 ],
               ),
             );
@@ -152,19 +128,15 @@ class _ActionCard extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  const _ActionCard({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
+  const _ActionCard(
+      {required this.icon, required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(kCardRadius),
-      ),
+          borderRadius: BorderRadius.circular(kCardRadius)),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(kCardRadius),
@@ -175,13 +147,9 @@ class _ActionCard extends StatelessWidget {
             children: [
               Icon(icon, size: 24, color: kPrimaryColor),
               const SizedBox(width: 12),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
+              Text(label,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 16)),
             ],
           ),
         ),
@@ -198,14 +166,13 @@ class _StatCard extends StatelessWidget {
   final bool isClickable;
   final VoidCallback? onTap;
 
-  const _StatCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-    required this.color,
-    this.isClickable = false,
-    this.onTap,
-  });
+  const _StatCard(
+      {required this.title,
+      required this.value,
+      required this.icon,
+      required this.color,
+      this.isClickable = false,
+      this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -213,8 +180,7 @@ class _StatCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(kCardRadius),
-      ),
+          borderRadius: BorderRadius.circular(kCardRadius)),
       child: InkWell(
         onTap: onTap,
         child: Padding(
@@ -226,14 +192,11 @@ class _StatCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                    ),
-                  ),
+                  Text(value,
+                      style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: color)),
                   Text(title, style: const TextStyle(color: kGreyText)),
                 ],
               ),
@@ -261,32 +224,26 @@ class _RolesPieChart extends StatelessWidget {
       kAccentColor,
       kSecondaryColor,
       Colors.blueGrey,
-      Colors.teal,
+      Colors.teal
     ];
     int colorIndex = 0;
 
     rolesCount.forEach((role, count) {
-      sections.add(
-        PieChartSectionData(
-          color: colors[colorIndex % colors.length],
-          value: count,
-          title: '${count.toInt()}',
-          radius: 60,
-          titleStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-      );
+      sections.add(PieChartSectionData(
+        color: colors[colorIndex % colors.length],
+        value: count,
+        title: '${count.toInt()}',
+        radius: 60,
+        titleStyle: const TextStyle(
+            fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+      ));
       colorIndex++;
     });
 
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(kCardRadius),
-      ),
+          borderRadius: BorderRadius.circular(kCardRadius)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -294,23 +251,19 @@ class _RolesPieChart extends StatelessWidget {
             Expanded(
               flex: 2,
               child: PieChart(
-                PieChartData(sections: sections, centerSpaceRadius: 20),
-              ),
+                  PieChartData(sections: sections, centerSpaceRadius: 20)),
             ),
             const SizedBox(width: 20),
             Expanded(
               flex: 3,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children:
-                    rolesCount.keys.map((role) {
-                      final index = rolesCount.keys.toList().indexOf(role);
-                      return _Indicator(
-                        color: colors[index % colors.length],
-                        text: role,
-                      );
-                    }).toList(),
+              // CORRECTION : La légende est maintenant dans un ListView pour être scrollable
+              child: ListView(
+                shrinkWrap: true, // Important dans une Row/Column
+                children: rolesCount.keys.map((role) {
+                  final index = rolesCount.keys.toList().indexOf(role);
+                  return _Indicator(
+                      color: colors[index % colors.length], text: role);
+                }).toList(),
               ),
             ),
           ],
@@ -334,12 +287,9 @@ class _Indicator extends StatelessWidget {
           Container(width: 16, height: 16, color: color),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(fontWeight: FontWeight.w500),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
+              child: Text(text,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                  overflow: TextOverflow.ellipsis)),
         ],
       ),
     );
@@ -361,15 +311,13 @@ class _RecentUserTile extends StatelessWidget {
       elevation: 0,
       color: Colors.white,
       shape: RoundedRectangleBorder(
-        side: BorderSide(color: Colors.grey.shade200),
-        borderRadius: BorderRadius.circular(kCardRadius),
-      ),
+          side: BorderSide(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(kCardRadius)),
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: kPrimaryColor.withOpacity(0.1),
-          child: const Icon(Icons.person, color: kPrimaryColor),
-        ),
+            backgroundColor: kPrimaryColor.withOpacity(0.1),
+            child: const Icon(Icons.person, color: kPrimaryColor)),
         title: Text(nom, style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(email),
         trailing: Text(role, style: const TextStyle(color: kGreyText)),

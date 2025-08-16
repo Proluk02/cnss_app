@@ -135,7 +135,11 @@ class AuthViewModel extends ChangeNotifier {
 
   Future<void> updateUserProfile({
     required String nom,
+    required String sigle,
     required String numAffiliation,
+    required String telephone,
+    required String adresse,
+    required String centreGestion,
   }) async {
     _setLoading(true);
     _setError(null);
@@ -146,15 +150,25 @@ class AuthViewModel extends ChangeNotifier {
       await _firebaseService.updateUserProfile(
         uid,
         nom: nom,
+        sigle: sigle,
         numAffiliation: numAffiliation,
+        telephone: telephone,
+        adresse: adresse,
+        centreGestion: centreGestion,
       );
+
+      // Mettre à jour l'état local immédiatement
       if (_currentUser != null) {
         _currentUser = UtilisateurModele(
           uid: _currentUser!.uid,
           email: _currentUser!.email,
           role: _currentUser!.role,
           nom: nom,
+          sigle: sigle,
           numAffiliation: numAffiliation,
+          telephone: telephone,
+          adresse: adresse,
+          centreGestion: centreGestion,
         );
         await _sqliteService.saveOrUpdateUtilisateur(_currentUser!);
       }

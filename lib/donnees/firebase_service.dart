@@ -2,6 +2,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cnss_app/donnees/modeles/declaration_modele.dart';
+import 'package:cnss_app/donnees/modeles/utilisateur_modele.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cnss_app/presentations/viewmodels/declaration_viewmodel.dart';
 
@@ -26,9 +27,13 @@ class FirebaseService {
         'email': email,
         'nom': nom,
         'role': role,
-        'dernierePeriodeDeclaree': null,
-        'numAffiliation': '',
         'nom_lower': nom.toLowerCase(),
+        'dernierePeriodeDeclaree': null,
+        'sigle': '',
+        'numAffiliation': '',
+        'telephone': '',
+        'adresse': '',
+        'centreGestion': 'Kamina',
       });
     }
     return user;
@@ -47,18 +52,35 @@ class FirebaseService {
     return doc.exists ? doc.data() : null;
   }
 
+  Future<UtilisateurModele?> getUtilisateurModele(String uid) async {
+    final doc = await _db.collection('utilisateurs').doc(uid).get();
+    if (doc.exists) {
+      return UtilisateurModele.fromFirestore(doc);
+    }
+    return null;
+  }
+
   Future<String?> getUserRole(String uid) async {
     final data = await getDonneesUtilisateur(uid);
     return data != null ? data['role'] as String? : null;
   }
 
   Future<void> updateUserProfile(String uid,
-      {required String nom, required String numAffiliation}) async {
+      {required String nom,
+      required String sigle,
+      required String numAffiliation,
+      required String telephone,
+      required String adresse,
+      required String centreGestion}) async {
     await _auth.currentUser?.updateDisplayName(nom);
     await _db.collection('utilisateurs').doc(uid).update({
       'nom': nom,
-      'numAffiliation': numAffiliation,
       'nom_lower': nom.toLowerCase(),
+      'sigle': sigle,
+      'numAffiliation': numAffiliation,
+      'telephone': telephone,
+      'adresse': adresse,
+      'centreGestion': centreGestion,
     });
   }
 
@@ -209,6 +231,13 @@ class FirebaseService {
         .snapshots();
   }
 
+  Stream<QuerySnapshot> getTousLesEmployeursStream() {
+    return _db
+        .collection('utilisateurs')
+        .where('role', isEqualTo: 'employeur')
+        .snapshots();
+  }
+
   Future<void> updateDeclarationStatus(
       String employeurUid, String periode, StatutDeclaration nouveauStatut,
       {String? motifRejet}) async {
@@ -224,6 +253,74 @@ class FirebaseService {
         .collection('declarations_finalisees')
         .doc(periode)
         .update(dataToUpdate);
+  }
+
+  Future<List<Map<String, dynamic>>> getDeclarationsValideesDuJourAvecEmployeur(
+      DateTime jour) async {
+    final debutJour =
+        Timestamp.fromDate(DateTime(jour.year, jour.month, jour.day));
+    final finJour = Timestamp.fromDate(
+        DateTime(jour.year, jour.month, jour.day, 23, 59, 59));
+    final declarationsSnapshot = await _db
+        .collectionGroup('declarations_finalisees')
+        .where('statut', isEqualTo: 'VALIDEE')
+        .where('dateValidation', isGreaterThanOrEqualTo: debutJour)
+        .where('dateValidation', isLessThanOrEqualTo: finJour)
+        .get();
+    List<Map<String, dynamic>> results = [];
+    await Future.forEach(declarationsSnapshot.docs, (declaDoc) async {
+      var data = declaDoc.data();
+      final employeurUid = declaDoc.reference.parent.parent!.id;
+      final employeurDoc =
+          await _db.collection('utilisateurs').doc(employeurUid).get();
+      if (employeurDoc.exists) {
+        data['employeurNom'] = employeurDoc.data()?['nom'];
+        data['numAffiliation'] = employeurDoc.data()?['numAffiliation'];
+      }
+      results.add(data);
+    });
+    return results;
+  }
+
+  Future<List<Map<String, dynamic>>> rechercherEmployeurs(String query) async {
+    if (query.isEmpty) return [];
+    final queryLower = query.toLowerCase();
+    final snapshot = await _db
+        .collection('utilisateurs')
+        .where('role', isEqualTo: 'employeur')
+        .where('nom_lower', isGreaterThanOrEqualTo: queryLower)
+        .where('nom_lower', isLessThanOrEqualTo: '$queryLower\uf8ff')
+        .limit(10)
+        .get();
+    return snapshot.docs.map((doc) {
+      final data = doc.data();
+      data['uid'] = doc.id;
+      return data;
+    }).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> getHistoriqueCompletEmployeur(
+      String uid) async {
+    final snapshot = await _db
+        .collection('utilisateurs')
+        .doc(uid)
+        .collection('declarations_finalisees')
+        .orderBy('dateFinalisation', descending: true)
+        .get();
+    return snapshot.docs.map((doc) => doc.data()).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> getTousLesEmployeurs() async {
+    final snapshot = await _db
+        .collection('utilisateurs')
+        .where('role', isEqualTo: 'employeur')
+        .orderBy('nom_lower')
+        .get();
+    return snapshot.docs.map((doc) {
+      final data = doc.data();
+      data['uid'] = doc.id;
+      return data;
+    }).toList();
   }
 
   Future<List<Map<String, dynamic>>>
@@ -250,87 +347,5 @@ class FirebaseService {
       return dateB.compareTo(dateA);
     });
     return results;
-  }
-
-  Future<List<Map<String, dynamic>>> getDeclarationsValideesDuJourAvecEmployeur(
-      DateTime jour) async {
-    final debutJour =
-        Timestamp.fromDate(DateTime(jour.year, jour.month, jour.day));
-    final finJour = Timestamp.fromDate(
-        DateTime(jour.year, jour.month, jour.day, 23, 59, 59));
-
-    final declarationsSnapshot = await _db
-        .collectionGroup('declarations_finalisees')
-        .where('statut', isEqualTo: 'VALIDEE')
-        .where('dateValidation', isGreaterThanOrEqualTo: debutJour)
-        .where('dateValidation', isLessThanOrEqualTo: finJour)
-        .get();
-
-    List<Map<String, dynamic>> results = [];
-    await Future.forEach(declarationsSnapshot.docs, (declaDoc) async {
-      var data = declaDoc.data();
-      final employeurUid = declaDoc.reference.parent.parent!.id;
-      final employeurDoc =
-          await _db.collection('utilisateurs').doc(employeurUid).get();
-
-      if (employeurDoc.exists) {
-        data['employeurNom'] = employeurDoc.data()?['nom'];
-        data['numAffiliation'] = employeurDoc.data()?['numAffiliation'];
-      }
-      results.add(data);
-    });
-
-    return results;
-  }
-
-  Future<List<Map<String, dynamic>>> rechercherEmployeurs(String query) async {
-    if (query.isEmpty) return [];
-    final queryLower = query.toLowerCase();
-
-    final snapshot = await _db
-        .collection('utilisateurs')
-        .where('role', isEqualTo: 'employeur')
-        .where('nom_lower', isGreaterThanOrEqualTo: queryLower)
-        .where('nom_lower', isLessThanOrEqualTo: '$queryLower\uf8ff')
-        .limit(10)
-        .get();
-
-    return snapshot.docs.map((doc) {
-      final data = doc.data();
-      data['uid'] = doc.id;
-      return data;
-    }).toList();
-  }
-
-  Future<List<Map<String, dynamic>>> getHistoriqueCompletEmployeur(
-      String uid) async {
-    final snapshot = await _db
-        .collection('utilisateurs')
-        .doc(uid)
-        .collection('declarations_finalisees')
-        .orderBy('dateFinalisation', descending: true)
-        .get();
-    return snapshot.docs.map((doc) => doc.data()).toList();
-  }
-
-  Future<List<Map<String, dynamic>>> getTousLesEmployeurs() async {
-    final snapshot = await _db
-        .collection('utilisateurs')
-        .where('role', isEqualTo: 'employeur')
-        .orderBy('nom_lower')
-        .get();
-
-    return snapshot.docs.map((doc) {
-      final data = doc.data();
-      data['uid'] = doc.id; // Enrichir avec l'ID du document
-      return data;
-    }).toList();
-  }
-
-  Stream<QuerySnapshot> getTousLesEmployeursStream() {
-    return _db
-        .collection('utilisateurs')
-        .where('role', isEqualTo: 'employeur')
-        .snapshots();
   }
 }

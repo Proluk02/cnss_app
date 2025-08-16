@@ -23,8 +23,7 @@ class _SesEmployersListScreenState extends State<SesEmployersListScreen> {
       appBar: AppBar(
         title: const Text("Liste des Employeurs"),
         flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: kAppBarGradient),
-        ),
+            decoration: const BoxDecoration(gradient: kAppBarGradient)),
       ),
       body: Column(
         children: [
@@ -36,20 +35,17 @@ class _SesEmployersListScreenState extends State<SesEmployersListScreen> {
                 hintText: "Rechercher par nom ou N° affiliation...",
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(
-                    Radius.circular(kButtonRadius),
-                  ),
-                ),
+                    borderRadius:
+                        BorderRadius.all(Radius.circular(kButtonRadius))),
               ),
             ),
           ),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream:
-                  FirebaseFirestore.instance
-                      .collection('utilisateurs')
-                      .where('role', isEqualTo: 'employeur')
-                      .snapshots(),
+              stream: FirebaseFirestore.instance
+                  .collection('utilisateurs')
+                  .where('role', isEqualTo: 'employeur')
+                  .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -61,37 +57,30 @@ class _SesEmployersListScreenState extends State<SesEmployersListScreen> {
                   return const Center(child: Text("Aucun employeur trouvé."));
                 }
 
-                var employeurs =
-                    snapshot.data!.docs.map((doc) {
-                      return UtilisateurModele.fromMap(
-                        doc.data() as Map<String, dynamic>,
-                      );
-                    }).toList();
+                // CORRECTION : On utilise `fromFirestore` qui utilise l'ID du document comme UID
+                var employeurs = snapshot.data!.docs.map((doc) {
+                  return UtilisateurModele.fromFirestore(doc);
+                }).toList();
 
                 if (_searchQuery.isNotEmpty) {
-                  employeurs =
-                      employeurs.where((user) {
-                        final query = _searchQuery.toLowerCase();
-                        final nom = user.nom?.toLowerCase() ?? '';
-                        final affiliation =
-                            user.numAffiliation?.toLowerCase() ?? '';
-                        return nom.contains(query) ||
-                            affiliation.contains(query);
-                      }).toList();
+                  employeurs = employeurs.where((user) {
+                    final query = _searchQuery.toLowerCase();
+                    final nom = user.nom?.toLowerCase() ?? '';
+                    final affiliation =
+                        user.numAffiliation?.toLowerCase() ?? '';
+                    return nom.contains(query) || affiliation.contains(query);
+                  }).toList();
                 }
 
                 if (employeurs.isEmpty) {
                   return const Center(
-                    child: Text(
-                      "Aucun employeur ne correspond à votre recherche.",
-                    ),
-                  );
+                      child: Text(
+                          "Aucun employeur ne correspond à votre recherche."));
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: kDefaultPadding,
-                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: kDefaultPadding),
                   itemCount: employeurs.length,
                   itemBuilder: (context, index) {
                     final user = employeurs[index];
@@ -100,33 +89,25 @@ class _SesEmployersListScreenState extends State<SesEmployersListScreen> {
                       shadowColor: Colors.black12,
                       margin: const EdgeInsets.only(bottom: 12),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(kCardRadius),
-                      ),
+                          borderRadius: BorderRadius.circular(kCardRadius)),
                       child: ListTile(
                         leading: CircleAvatar(
                           backgroundColor: kPrimaryColor.withOpacity(0.1),
                           foregroundColor: kPrimaryColor,
                           child: const Icon(Icons.business_center_outlined),
                         ),
-                        title: Text(
-                          user.nom ?? 'N/A',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                        title: Text(user.nom ?? 'N/A',
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
                         subtitle: Text(
-                          "N° Affiliation: ${user.numAffiliation?.isNotEmpty ?? false ? user.numAffiliation! : 'Non défini'}",
-                        ),
-                        trailing: const Icon(
-                          Icons.arrow_forward_ios,
-                          size: 16,
-                          color: kGreyText,
-                        ),
+                            "N° Affiliation: ${user.numAffiliation?.isNotEmpty ?? false ? user.numAffiliation! : 'Non défini'}"),
+                        trailing: const Icon(Icons.arrow_forward_ios,
+                            size: 16, color: kGreyText),
                         onTap: () {
-                          // CORRECTION : Navigation vers l'écran de détail
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => UserDetailScreen(user: user),
-                            ),
+                                builder: (_) => UserDetailScreen(user: user)),
                           );
                         },
                       ),

@@ -3,6 +3,7 @@
 import 'package:cnss_app/core/constantes.dart';
 import 'package:cnss_app/presentations/viewmodels/auth_viewmodel.dart';
 import 'package:cnss_app/presentations/viewmodels/decompteur_viewmodel.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -45,7 +46,6 @@ class _DecompteurDashboardViewState extends State<_DecompteurDashboardView> {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<DecompteurViewModel>();
-    // CORRECTION : Utilisation de DateFormat
     final dateFormat = DateFormat.yMMMMd('fr_FR');
 
     return Scaffold(
@@ -62,14 +62,13 @@ class _DecompteurDashboardViewState extends State<_DecompteurDashboardView> {
           )
         ],
       ),
+      drawer: _buildCustomDrawer(context),
       body: Column(
         children: [
           Container(
             padding: const EdgeInsets.all(kDefaultPadding),
             decoration: const BoxDecoration(
-              color: Colors.white,
-              boxShadow: kCardShadow,
-            ),
+                color: Colors.white, boxShadow: kCardShadow),
             child: Column(
               children: [
                 InkWell(
@@ -83,8 +82,7 @@ class _DecompteurDashboardViewState extends State<_DecompteurDashboardView> {
                               BorderRadius.all(Radius.circular(kButtonRadius))),
                     ),
                     child: Text(
-                      dateFormat.format(viewModel
-                          .selectedDate), // Utilisation de la variable corrigée
+                      dateFormat.format(viewModel.selectedDate),
                       style: kSubtitleStyle.copyWith(
                           color: kDarkText, fontSize: 16),
                     ),
@@ -102,7 +100,7 @@ class _DecompteurDashboardViewState extends State<_DecompteurDashboardView> {
         onPressed: viewModel.declarationsDuJour.isEmpty || viewModel.isLoading
             ? null
             : () => viewModel.imprimerEtatJournalier(),
-        label: const Text("Imprimer l'État Journalier"),
+        label: const Text("Imprimer l'État"),
         icon: viewModel.isLoading
             ? const SizedBox(
                 height: 18,
@@ -163,9 +161,8 @@ class _DecompteurDashboardViewState extends State<_DecompteurDashboardView> {
           const Text("Aucune déclaration validée",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          // CORRECTION : Utilisation de DateFormat
           Text(
-              "Aucune déclaration n'a été validée le ${DateFormat.yMMMMd('fr_FR').format(viewModel.selectedDate)}.",
+              "Il n'y a aucune déclaration validée le ${DateFormat.yMMMMd('fr_FR').format(viewModel.selectedDate)}.",
               textAlign: TextAlign.center,
               style: const TextStyle(color: kGreyText)),
         ]),
@@ -197,6 +194,58 @@ class _DecompteurDashboardViewState extends State<_DecompteurDashboardView> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildCustomDrawer(BuildContext context) {
+    final User? currentUser = FirebaseAuth.instance.currentUser;
+    return Drawer(
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+            decoration: const BoxDecoration(gradient: kAppBarGradient),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle),
+                  child:
+                      Image.asset('assets/images/logo_cnss.png', height: 48)),
+              const SizedBox(height: 16),
+              const Text("Décompteur",
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Text(currentUser?.email ?? "decompteur@cnss.app",
+                  style: const TextStyle(color: Colors.white70, fontSize: 14)),
+            ]),
+          ),
+          Expanded(
+              child: ListView(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  children: [
+                ListTile(
+                  leading:
+                      const Icon(Icons.home_outlined, color: kPrimaryColor),
+                  title: const Text('Accueil',
+                      style: TextStyle(
+                          color: kDarkText, fontWeight: FontWeight.bold)),
+                  onTap: () => Navigator.pop(context),
+                ),
+              ])),
+          const Divider(height: 1),
+          const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text('CnssApp v1.0.0',
+                  style: TextStyle(color: kGreyText, fontSize: 12))),
+        ],
+      ),
     );
   }
 }

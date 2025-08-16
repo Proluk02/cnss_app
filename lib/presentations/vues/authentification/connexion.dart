@@ -20,36 +20,33 @@ class _ConnexionPageState extends State<ConnexionPage> {
   final _passwordController = TextEditingController();
 
   void _login() {
-    // Si le formulaire n'est pas valide, on ne fait rien.
     if (!_formKey.currentState!.validate()) return;
 
-    // On récupère le ViewModel via context.read() car on est dans une fonction.
     final authVM = context.read<AuthViewModel>();
 
-    // On lance l'opération de connexion.
     authVM
         .login(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-        )
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+    )
         .catchError((error) {
-          // Si le ViewModel renvoie une erreur (ex: mot de passe incorrect), on l'affiche.
-          // On vérifie si le widget est toujours "monté" avant d'afficher le SnackBar.
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(error.toString()),
-                backgroundColor: Colors.redAccent,
-              ),
-            );
-          }
-        });
-    // PLUS DE setState, PLUS DE GESTION DE isLoading, PLUS DE NAVIGATION MANUELLE.
-    // Tout est géré par le ViewModel et le SessionWrapper.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.toString().replaceFirst("Exception: ", "")),
+            backgroundColor: kErrorColor,
+          ),
+        );
+      }
+    });
   }
 
-  // Le reste de votre UI (build, buildField) peut rester quasiment identique.
-  // La seule différence est qu'on lira `isLoading` depuis le ViewModel.
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   Widget buildField({
     required TextEditingController controller,
@@ -59,25 +56,21 @@ class _ConnexionPageState extends State<ConnexionPage> {
     return TextFormField(
       controller: controller,
       obscureText: obscure,
-      validator:
-          (value) =>
-              value == null || value.trim().isEmpty ? 'Champ requis' : null,
+      validator: (value) =>
+          value == null || value.trim().isEmpty ? 'Champ requis' : null,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(
-          label == "Email" ? Icons.email : Icons.lock,
-          color: kPrimaryColor,
-        ),
+            label == "Email" ? Icons.email_outlined : Icons.lock_outline,
+            color: kPrimaryColor),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(kInputRadius),
-        ),
+            borderRadius: BorderRadius.circular(kInputRadius)),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // On observe le ViewModel pour savoir si une opération est en cours.
     final authVM = context.watch<AuthViewModel>();
 
     return Scaffold(
@@ -85,119 +78,137 @@ class _ConnexionPageState extends State<ConnexionPage> {
       body: Stack(
         children: [
           Container(
-            height: MediaQuery.of(context).size.height * 0.3,
+            height: MediaQuery.of(context).size.height *
+                0.35, // Un peu plus grand pour l'effet visuel
             decoration: const BoxDecoration(
               gradient: kAppBarGradient,
               borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
+                  bottomLeft: Radius.circular(50),
+                  bottomRight: Radius.circular(50)),
+            ),
+          ),
+
+          // --- CORRECTION : LOGO RÉINTÉGRÉ ICI ---
+          Positioned(
+            top: MediaQuery.of(context).size.height *
+                0.1, // Ajuster la position verticale
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5))
+                  ],
+                ),
+                child: Image.asset('assets/images/logo_cnss.png', height: 80),
               ),
             ),
           ),
-          // ... (Le reste de votre UI pour le logo et le bouton retour reste identique)
+          // --- FIN DE LA CORRECTION ---
+
           SingleChildScrollView(
-            padding: EdgeInsets.only(
-              top: MediaQuery.of(context).size.height * 0.25,
-              left: kDefaultPadding,
-              right: kDefaultPadding,
-              bottom: kDefaultPadding,
-            ),
-            child: Card(
-              elevation: 8,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(kCardRadius),
+            child: Padding(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).size.height *
+                    0.3, // Démarrer le contenu plus bas
+                left: kDefaultPadding,
+                right: kDefaultPadding,
+                bottom: kDefaultPadding,
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(kDefaultPadding),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      const Text(
-                        "CONNEXION",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: kDarkText,
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-                      buildField(controller: _emailController, label: "Email"),
-                      const SizedBox(height: 20),
-                      buildField(
-                        controller: _passwordController,
-                        label: "Mot de passe",
-                        obscure: true,
-                      ),
-                      const SizedBox(height: 10),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed:
-                              () => Navigator.push(
+              child: Card(
+                elevation: 8,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(kCardRadius)),
+                child: Padding(
+                  padding: const EdgeInsets.all(kDefaultPadding),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 16),
+                        const Text("CONNEXION",
+                            style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: kDarkText)),
+                        const SizedBox(height: 30),
+                        buildField(
+                            controller: _emailController, label: "Email"),
+                        const SizedBox(height: 20),
+                        buildField(
+                            controller: _passwordController,
+                            label: "Mot de passe",
+                            obscure: true),
+                        const SizedBox(height: 10),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const MotDePasseOubliePage(),
-                                ),
-                              ),
-                          child: const Text("Mot de passe oublié ?"),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed:
-                              authVM.isLoading
-                                  ? null
-                                  : _login, // Le bouton est désactivé si isLoading est true
-                          style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                kButtonRadius,
-                              ),
-                            ),
+                                    builder: (_) =>
+                                        const MotDePasseOubliePage())),
+                            child: const Text("Mot de passe oublié ?"),
                           ),
-                          child: Ink(
-                            decoration: BoxDecoration(
-                              gradient: kAppBarGradient,
-                              borderRadius: BorderRadius.circular(
-                                kButtonRadius,
-                              ),
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton(
+                            onPressed: authVM.isLoading ? null : _login,
+                            style: ElevatedButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.circular(kButtonRadius)),
                             ),
-                            child: Center(
-                              child:
-                                  authVM.isLoading
-                                      ? const CircularProgressIndicator(
-                                        valueColor: AlwaysStoppedAnimation(
-                                          Colors.white,
-                                        ),
-                                      )
-                                      : const Text(
-                                        "Se connecter",
+                            child: Ink(
+                              decoration: BoxDecoration(
+                                  gradient: kAppBarGradient,
+                                  borderRadius:
+                                      BorderRadius.circular(kButtonRadius)),
+                              child: Center(
+                                child: authVM.isLoading
+                                    ? const SizedBox(
+                                        height: 24,
+                                        width: 24,
+                                        child: CircularProgressIndicator(
+                                            valueColor: AlwaysStoppedAnimation(
+                                                Colors.white)))
+                                    : const Text("Se connecter",
                                         style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16)),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextButton(
-                        onPressed:
-                            () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const FormulaireInscription(),
-                              ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text("Vous n'avez pas de compte ?"),
+                            TextButton(
+                              onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) =>
+                                          const FormulaireInscription())),
+                              child: const Text("S'inscrire"),
                             ),
-                        child: const Text("Créer un compte"),
-                      ),
-                    ],
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

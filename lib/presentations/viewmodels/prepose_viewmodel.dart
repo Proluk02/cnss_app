@@ -50,14 +50,16 @@ class PreposeViewModel extends ChangeNotifier {
 
     try {
       final data = await _firebase.getTousLesEmployeurs();
+
       _tousLesEmployeurs =
           data.map((d) => UtilisateurModele.fromMap(d)).toList();
+
       if (_tousLesEmployeurs.isEmpty) {
-        _errorMessage = "Aucun employeur trouvé dans le système.";
+        // Ce n'est pas une erreur, juste un état vide que l'UI peut gérer.
       }
     } catch (e) {
       _errorMessage =
-          "Erreur de chargement des employeurs. Un index est probablement manquant.";
+          "Erreur de chargement des employeurs. Un index est probablement manquant sur Firestore (role ASC, nom_lower ASC).";
       _tousLesEmployeurs = [];
       debugPrint("ERREUR PREPOSE VM (chargerTousLesEmployeurs): $e");
     } finally {
