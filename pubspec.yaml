@@ -1,5 +1,5 @@
 name: cnss_app
-description: "A new Flutter project."
+description: "Projet E-Déclaration des cotisations de la CNSS/Kamina"
 publish_to: 'none'
 version: 0.1.0
 
@@ -9,34 +9,64 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
   flutter_localizations:
     sdk: flutter
-  intl: 0.19.0
+
+  intl: 0.19.0 # Maintenu à cette version pour la compatibilité
+
+  # Packages Firebase
   firebase_core: ^2.31.0
   firebase_auth: ^4.19.0
   cloud_firestore: ^4.17.0
+
+  # Gestion d'état
   provider: ^6.1.2
+
+  # Base de données
   sqflite: ^2.3.3
+
+  # Utilitaires et Design
   flutter_vector_icons: ^2.0.0
   uuid: ^4.4.0
   fl_chart: ^0.68.0
+  month_year_picker: ^0.4.0+1
+  
+  # Impression PDF
   pdf: ^3.10.8
   printing: ^5.12.0
   
   cupertino_icons: ^1.0.2
-  flutter_riverpod: ^2.6.1
-  month_year_picker: ^0.4.0+1
+  
+  # Note : flutter_riverpod est listé mais notre code actuel utilise provider.
+  # Vous pouvez le garder si vous prévoyez de l'utiliser, sinon il peut être supprimé.
+  flutter_riverpod: ^2.5.1
+
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  sqflite_common_ffi_web: ^0.4.3+1
   
   flutter_lints: ^3.0.0
+
+  # Package pour le support de sqflite sur le web
+  sqflite_common_ffi_web: ^0.4.3+1
+  
+  # Package pour générer les icônes de l'application
+  flutter_launcher_icons: ^0.13.1
+
 
 flutter:
   uses-material-design: true
   
   assets:
     - assets/images/
+
+# --- NOUVELLE SECTION AJOUTÉE ---
+# Configuration pour le package flutter_launcher_icons
+flutter_launcher_icons:
+  # Android, true génère l'icône normale. 
+  # "launcher_icon" peut être utilisé si vous avez un design spécifique.
+  android: true 
+  # iOS, true génère l'icône normale.
+  ios: true
+  image_path: "assets/images/logo_cnss.png"
